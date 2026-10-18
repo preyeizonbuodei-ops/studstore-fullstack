@@ -2,7 +2,7 @@ import { create } from "zustand";
 import axios from "axios";
 
 // Already includes /api/v1, so the paths below don't repeat it
-const API_URL = "http://localhost:8000/api/v1/users";
+const API_URL = "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/users";
 
 // Path of the route that runs getRefreshToken (check your backend route.js)
 const REFRESH_URL = `${API_URL}/refresh-token`;
