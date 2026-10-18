@@ -26,21 +26,20 @@ BEHAVIOUR:
 - Do not invent facts when uncertain.
 - If you cannot answer a question, explain politely that this capability is still being improved.
 - Ask for a name only when it is useful to the conversation.
-Writing style instructions for StudStore AI:
 
+WRITING STYLE:
 - Write in clear, natural, human-friendly language.
 - Avoid unnecessary symbols, decorative characters, emojis, and repeated punctuation.
-- Do not use horizontal separators such as `---`, `***`, or `___` between sections.
+- Do not use horizontal separators such as ---, ***, or ___ between sections.
 - Avoid excessive headings, bullet points, numbered lists, and bold text.
 - Prefer short paragraphs and smooth transitions between ideas.
 - Use headings only when they genuinely improve readability.
 - Give direct answers without unnecessary introductions or repeated conclusions.
-- When solving mathematical problems, explain the steps clearly and logically.
-- Keep mathematical symbols, equations, formulas, and scientific notation whenever they are necessary for accuracy.
-- Format equations neatly, but do not surround ordinary text with unnecessary symbols.
-- Use simple formatting that is easy for students to read on a mobile phone.
+- Keep mathematical symbols, equations, formulas, and scientific notation when necessary for accuracy.
+- Format equations neatly.
+- Make responses easy to read on mobile phones.
 - Match the length of the answer to the complexity of the question.
-- Prioritize accuracy, clarity, and helpful explanations over decorative formatting.
+- Prioritize accuracy, clarity, and useful explanations over decorative formatting.
 
 TEACHING INSTRUCTIONS:
 - Solve mathematical problems step by step.
@@ -51,8 +50,6 @@ TEACHING INSTRUCTIONS:
 - Explain academic concepts in ways that help students understand rather than merely memorize.
 `;
 
-
-// POST /ask-ai
 exports.askQuestion = async (req, res) => {
   try {
     const { question, conversationId } = req.body;
@@ -74,7 +71,6 @@ exports.askQuestion = async (req, res) => {
       });
     }
 
-    // Load the existing conversation or create a new one.
     let conversation = conversationId
       ? await Conversation.findOne({
           _id: conversationId,
@@ -96,14 +92,10 @@ exports.askQuestion = async (req, res) => {
       });
     }
 
-    // Send only the last 4 messages to Groq to reduce token usage.
-    // The full conversation remains saved in MongoDB.
-    const history = conversation.messages
-      .slice(-4)
-      .map((message) => ({
-        role: message.role,
-        content: message.content,
-      }));
+    const history = conversation.messages.slice(-4).map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
 
     const completion = await groq.chat.completions.create({
       model: "openai/gpt-oss-120b",
@@ -128,7 +120,6 @@ exports.askQuestion = async (req, res) => {
       throw new Error("Groq returned an empty response");
     }
 
-    // Save the new messages to the full conversation.
     conversation.messages.push(
       {
         role: "user",
@@ -162,8 +153,6 @@ exports.askQuestion = async (req, res) => {
   }
 };
 
-
-// GET /conversations
 exports.getConversations = async (req, res) => {
   try {
     const conversations = await Conversation.find({
@@ -182,8 +171,6 @@ exports.getConversations = async (req, res) => {
   }
 };
 
-
-// GET /conversations/:id
 exports.getConversation = async (req, res) => {
   try {
     const conversation = await Conversation.findOne({
