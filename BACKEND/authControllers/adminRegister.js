@@ -52,12 +52,7 @@ const getSafeAdmin = (admin) => ({
 });
 
 // VERIFY EMAIL DELIVERY
-const isEmailAccepted = (mailInfo, email) => {
-    return mailInfo?.accepted?.some(
-        (address) =>
-            String(address).toLowerCase() === email.toLowerCase()
-    );
-};
+
 
 // CENTRAL ERROR HANDLER
 const sendControllerError = (res, error, label) => {
@@ -131,15 +126,6 @@ exports.AdminRegister = async (req, res) => {
             });
         }
 
-        if (!process.env.NODE_CODE_SENDING_EMAIL_ADDRESS) {
-            throw new Error(
-                "Admin verification email address is not configured"
-            );
-        }
-
-        if (!process.env.EMAIL_FROM) {
-            throw new Error("EMAIL_FROM is not configured");
-        }
 
         const normalizedEmail = email.trim().toLowerCase();
 
@@ -195,12 +181,6 @@ exports.AdminRegister = async (req, res) => {
             `
         });
 
-        if (!SendMail) {
-            return res.status(502).json({
-                success: false,
-                message: "Verification email could not be delivered. Please try again."
-            });
-        }
 
         await newAdmin.save();
 
@@ -296,13 +276,7 @@ exports.adminVerifyVerificationCode = async (req, res) => {
             `
         });
 
-        if (!SendMail) {
-            return res.status(502).json({
-                success: false,
-                message: "The admin passkey email could not be delivered. Please try again."
-            });
-        }
-
+    
         existingAdmin.key = hmacProcess(
             adminPasskey,
             getVerificationSecret()

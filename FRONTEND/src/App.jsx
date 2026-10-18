@@ -19,9 +19,7 @@ import ChangePassword from "./Pages/ChangePassword";
 import ForgetPasswordVerification from "./Pages/ForgetPassword";
 import ForgetPasswordSend from "./Pages/ForgetPasswordSend";
 import ResetPassword from "./Pages/ResetPassword";
-
-
-
+import StudStoreAi from "./StudStoreAi";
 
 // ADMIN
 import AdminSidebar from "./DashBoards/AdminDashboard/AdminPages/AdminSidebar";
@@ -34,7 +32,7 @@ import AdminLogin from "./Pages/AdminRegisters/AdminLogin";
 import AdminRegister from "./Pages/AdminRegisters/AdminRegister";
 import AdminVerifyEmail from "./Pages/AdminRegisters/AdminVerifyEmail";
 import CreateLessonForm from "./DashBoards/AdminDashboard/AdminPageForms/CreateLesson";
-import CreateTopicForm from "./DashBoards/AdminDashboard/AdminPageForms/CreateTopic"
+import CreateTopicForm from "./DashBoards/AdminDashboard/AdminPageForms/CreateTopic";
 import CreateDepartment from "./DashBoards/AdminDashboard/AdminPageForms/CreateDepartment";
 import AdminSettings from "./DashBoards/AdminDashboard/AdminPages/AdminSettings";
 
@@ -43,8 +41,8 @@ import UserLanding from "./DashBoards/UserDashboard/UserPages/UserLanding";
 import UserDashBoard from "./DashBoards/UserDashboard/UserPages/UserDashBoard";
 import Courses from "./DashBoards/UserDashboard/UserPages/Courses";
 import Lessons from "./DashBoards/UserDashboard/UserPages/Component/LessonPage";
-import TopicsPage from "./DashBoards/UserDashboard/UserPages/Component/TopicPage"
-import TopicDetails from "./DashBoards/UserDashboard/UserPages/Component/TopicIdPage";                                                          
+import TopicsPage from "./DashBoards/UserDashboard/UserPages/Component/TopicPage";
+import TopicDetails from "./DashBoards/UserDashboard/UserPages/Component/TopicIdPage";
 import Materials from "./DashBoards/UserDashboard/UserPages/Component/ResourcesPage";
 import Profile from "./DashBoards/UserDashboard/UserPages/Component/Profile";
 import Settings from "./DashBoards/UserDashboard/UserPages/Component/Settings";
@@ -68,20 +66,6 @@ import AdminProtectedRoute from "./AdminProtectedRoute";
 
 import "./App.css";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function App() {
     const checkAuth = useAuthStore(
         (state) => state.checkAuth
@@ -90,6 +74,9 @@ function App() {
     useEffect(() => {
         checkAuth();
     }, []);
+
+    // Used to show the AI tutor only to logged-in students
+    const user = useAuthStore((state) => state.user);
 
     const AdminCheckAuth = adminCheck(
         (state) => state.AdminCheckAuth
@@ -100,324 +87,318 @@ function App() {
     }, []);
 
     return (
-        <Routes>
+        <>
+            <Routes>
 
-            {/* ==================== PUBLIC ==================== */}
-
-            <Route
-                path="/"
-                element={
-                    <>
-                        <Navbar />
-                        <Home />
-                    </>
-                }
-            />
-
-            <Route
-                path="/about"
-                element={
-                    <>
-                        <Navbar />
-                        <About />
-                    </>
-                }
-            />
-
-            <Route
-                path="/department"
-                element={
-                    <>
-                        <Navbar />
-                        <Department />
-                    </>
-                }
-            />
-
-            <Route
-                path="/news"
-                element={
-                    <>
-                        <Navbar />
-                        <News />
-                    </>
-                }
-            />
-
-            <Route
-                path="/resources"
-                element={
-                    <>
-                        <Navbar />
-                        <Resources />
-                    </>
-                }
-            />
-
-            <Route
-                path="/research"
-                element={
-                    <>
-                        <Navbar />
-                        <Research />
-                    </>
-                }
-            />
-
-            <Route
-                path="/contact"
-                element={
-                    <>
-                        <Navbar />
-                        <Contact />
-                    </>
-                }
-            />
-
-            {/* ==================== GUEST ROUTES ==================== */}
-
-            <Route element={<GuestRoute />}>
+                {/* ==================== PUBLIC ==================== */}
 
                 <Route
-                    path="/register"
+                    path="/"
                     element={
                         <>
                             <Navbar />
-                            <UserRegister />
+                            <Home />
                         </>
                     }
                 />
 
                 <Route
-                    path="/login"
+                    path="/about"
                     element={
                         <>
                             <Navbar />
-                            <Login />
+                            <About />
                         </>
                     }
                 />
 
                 <Route
-                    path="/verify-email"
-                    element={<VerifyEmail />}
-                />
-
-                
-
-                <Route
-                    path="/verify-forget-password"
-                    element={<ForgetPasswordVerification />}
-                />
-
-                <Route
-                    path="/forget-password"
-                    element={<ForgetPasswordSend />}
+                    path="/department"
+                    element={
+                        <>
+                            <Navbar />
+                            <Department />
+                        </>
+                    }
                 />
 
                 <Route
-                    path="/reset-password"
-                    element={<ResetPassword />}
+                    path="/news"
+                    element={
+                        <>
+                            <Navbar />
+                            <News />
+                        </>
+                    }
                 />
 
-            </Route>
-
-            {/* ==================== DEPARTMENTS ==================== */}
-
-            <Route
-                path="/research-papers"
-                element={<ResearchPapers />}
-            />
-
-            {/* ==================== ADMIN ==================== */}
-
-            <Route element={<AdminProtectedRoute />}>
+                <Route
+                    path="/resources"
+                    element={
+                        <>
+                            <Navbar />
+                            <Resources />
+                        </>
+                    }
+                />
 
                 <Route
-                    path="/admin-dashboard"
-                    element={<AdminSidebar />}
-                >
+                    path="/research"
+                    element={
+                        <>
+                            <Navbar />
+                            <Research />
+                        </>
+                    }
+                />
+
+                <Route
+                    path="/contact"
+                    element={
+                        <>
+                            <Navbar />
+                            <Contact />
+                        </>
+                    }
+                />
+
+                {/* ==================== GUEST ROUTES ==================== */}
+
+                <Route element={<GuestRoute />}>
+
                     <Route
-                        index
-                        element={<AdminDefault />}
+                        path="/register"
+                        element={
+                            <>
+                                <Navbar />
+                                <UserRegister />
+                            </>
+                        }
                     />
 
                     <Route
-                        path="departments"
-                        element={<AdminDepartment />}
+                        path="/login"
+                        element={
+                            <>
+                                <Navbar />
+                                <Login />
+                            </>
+                        }
                     />
 
                     <Route
-                        path="major-areas"
-                        element={<AdminMajorArea />}
+                        path="/verify-email"
+                        element={<VerifyEmail />}
                     />
 
                     <Route
-                        path="topics"
-                        element={<Topics />}
+                        path="/verify-forget-password"
+                        element={<ForgetPasswordVerification />}
                     />
 
                     <Route
-                        path="users"
-                        element={<UserData />}
+                        path="/forget-password"
+                        element={<ForgetPasswordSend />}
                     />
 
                     <Route
-                        path="settings"
-                        element={<AdminSettings />}
+                        path="/reset-password"
+                        element={<ResetPassword />}
                     />
-                    
+
                 </Route>
 
-                <Route
-                    path="/admin/create-course"
-                    element={<CreateCourse />}
-                />
+                {/* ==================== DEPARTMENTS ==================== */}
 
                 <Route
-                    path="/admin/create-lesson"
-                    element={<CreateLessonForm />}
+                    path="/research-papers"
+                    element={<ResearchPapers />}
                 />
 
-                <Route
-                    path="/admin/create-topic"
-                    element={<CreateTopicForm />}
-                />
+                {/* ==================== ADMIN ==================== */}
 
-                {/* Department Routes */}
-                <Route
-                    path="/admin/create-department"
-                    element={<CreateDepartment />}
-                />
-
-                {/* Create Major Area */}
-                <Route
-                    path="/admin/create-major-area"
-                    element={<AdminCreateMajorArea />}
-                />
-
-                <Route
-                    path="/admin/create-major-area-topic"
-                    element={<CreateMajorAreaTopic />}
-                />
-
-                <Route
-                    path="/admin/create-research-paper"
-                    element={<CreateResearchPaper />}
-                />
-
-                
-
-
-                
-                
-
-            </Route>
-
-            {/* ==================== ADMIN GUEST ==================== */}
-
-            <Route element={<AdminGuestRoute />}>
-
-                <Route
-                    path="/admin-register"
-                    element={<AdminRegister />}
-                />
-
-                <Route
-                    path="/admin-login"
-                    element={<AdminLogin />}
-                />
-
-                <Route
-                    path="/admin-verify-email"
-                    element={<AdminVerifyEmail />}
-                />
-
-            </Route>
-
-            {/* ==================== STUDENT ==================== */}
-
-            <Route element={<ProtectedRoute />}>
-
-                {/* USER DASHBOARD LAYOUT */}
-                <Route element={<UserDashBoard />}>
+                <Route element={<AdminProtectedRoute />}>
 
                     <Route
-                        path="/me"
-                        element={<UserLanding />}
+                        path="/admin-dashboard"
+                        element={<AdminSidebar />}
+                    >
+                        <Route
+                            index
+                            element={<AdminDefault />}
+                        />
+
+                        <Route
+                            path="departments"
+                            element={<AdminDepartment />}
+                        />
+
+                        <Route
+                            path="major-areas"
+                            element={<AdminMajorArea />}
+                        />
+
+                        <Route
+                            path="topics"
+                            element={<Topics />}
+                        />
+
+                        <Route
+                            path="users"
+                            element={<UserData />}
+                        />
+
+                        <Route
+                            path="settings"
+                            element={<AdminSettings />}
+                        />
+
+                    </Route>
+
+                    <Route
+                        path="/admin/create-course"
+                        element={<CreateCourse />}
                     />
 
                     <Route
-                    path="/me/change-password"
-                    element={<ChangePassword />}
-                />
-
-                    <Route
-                        path="/me/courses"
-                        element={<Courses />}
-                    />
-
-                    {/* COURSE LESSONS */}
-                    <Route
-                        path="/courses/:courseId/lesson"
-                        element={<Lessons />}
+                        path="/admin/create-lesson"
+                        element={<CreateLessonForm />}
                     />
 
                     <Route
-                        path="/lessons/:lessonId/topics"
-                        element={<TopicsPage />}
+                        path="/admin/create-topic"
+                        element={<CreateTopicForm />}
+                    />
+
+                    {/* Department Routes */}
+                    <Route
+                        path="/admin/create-department"
+                        element={<CreateDepartment />}
+                    />
+
+                    {/* Create Major Area */}
+                    <Route
+                        path="/admin/create-major-area"
+                        element={<AdminCreateMajorArea />}
                     />
 
                     <Route
-                        path="/topics/:topicId"
-                        element={<TopicDetails />}
+                        path="/admin/create-major-area-topic"
+                        element={<CreateMajorAreaTopic />}
                     />
 
                     <Route
-                        path="/me/learning-materials"
-                        element={<Materials />}
+                        path="/admin/create-research-paper"
+                        element={<CreateResearchPaper />}
                     />
-
-                    <Route
-                        path="/me/profile"
-                        element={<Profile />}
-                    />
-
-                    <Route
-                        path="/me/setting"
-                        element={<Settings />}
-                    />
-
-                    
-
-                <Route
-                    path="/areas/:departmentId/:areaId"
-                    element={<AreaDetails />}
-                />
-
-                <Route
-                    path="/major-areas/:areaId"
-                    element={<TopicArea />}
-                />
-
-                
-
-                <Route
-                    path="/major-area-topics/:majorTopicId"
-                    element={<MajorAreaTopicDetails />}
-                />
-
-                    {/* LESSON TOPICS */}
-                    {/* We will add this after creating Topics */}
 
                 </Route>
-                    <Route
-                path="/departments/:departmentId"
-                element={<DepartmentDetails />}
-                />
-            </Route>
 
-        </Routes>
+                {/* ==================== ADMIN GUEST ==================== */}
+
+                <Route element={<AdminGuestRoute />}>
+
+                    <Route
+                        path="/admin-register"
+                        element={<AdminRegister />}
+                    />
+
+                    <Route
+                        path="/admin-login"
+                        element={<AdminLogin />}
+                    />
+
+                    <Route
+                        path="/admin-verify-email"
+                        element={<AdminVerifyEmail />}
+                    />
+
+                </Route>
+
+                {/* ==================== STUDENT ==================== */}
+
+                <Route element={<ProtectedRoute />}>
+
+                    {/* USER DASHBOARD LAYOUT */}
+                    <Route element={<UserDashBoard />}>
+
+                        <Route
+                            path="/me"
+                            element={<UserLanding />}
+                        />
+
+                        <Route
+                            path="/me/change-password"
+                            element={<ChangePassword />}
+                        />
+
+                        <Route
+                            path="/me/courses"
+                            element={<Courses />}
+                        />
+
+                        {/* COURSE LESSONS */}
+                        <Route
+                            path="/courses/:courseId/lesson"
+                            element={<Lessons />}
+                        />
+
+                        <Route
+                            path="/lessons/:lessonId/topics"
+                            element={<TopicsPage />}
+                        />
+
+                        <Route
+                            path="/topics/:topicId"
+                            element={<TopicDetails />}
+                        />
+
+                        <Route
+                            path="/me/learning-materials"
+                            element={<Materials />}
+                        />
+
+                        <Route
+                            path="/me/profile"
+                            element={<Profile />}
+                        />
+
+                        <Route
+                            path="/me/setting"
+                            element={<Settings />}
+                        />
+
+                        <Route
+                            path="/areas/:departmentId/:areaId"
+                            element={<AreaDetails />}
+                        />
+
+                        <Route
+                            path="/major-areas/:areaId"
+                            element={<TopicArea />}
+                        />
+
+                        <Route
+                            path="/major-area-topics/:majorTopicId"
+                            element={<MajorAreaTopicDetails />}
+                        />
+
+                        {/* LESSON TOPICS */}
+                        {/* We will add this after creating Topics */}
+
+                    </Route>
+
+                    <Route
+                        path="/departments/:departmentId"
+                        element={<DepartmentDetails />}
+                    />
+                </Route>
+
+            </Routes>
+
+            {/* AI tutor: outside <Routes> so it shows on every page for logged-in students */}
+            {<StudStoreAi />}
+        </>
     );
 }
 

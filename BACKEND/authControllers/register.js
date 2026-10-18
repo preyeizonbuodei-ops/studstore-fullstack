@@ -24,6 +24,7 @@ const clearAuthCookieOptions = () => ({
     path: "/",
 });
 
+
 exports.Register = async (req, res) => {
     try {
         console.log(req.body);

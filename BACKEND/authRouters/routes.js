@@ -18,11 +18,16 @@ const { getAllMajorAreaTopics, getMajorAreaTopicById } = require("../authControl
 const { ContactFormController } = require("../authControllers/ContactFormController");
 const { getAllResearchPapers, getResearchPaperById } = require("../authControllers/Admin/DepartmentController/ResearchAreaController");
 const { AuthLimiter } = require("../middlewares/RateLimit");
+const { askQuestion, getConversations, getConversation } = require("../authControllers/StudStoreAi");
 
 
 
 const router = express.Router();
 
+// StudStore Ai Route
+router.post("/ask-ai", ValidateToken, askQuestion);
+router.get("/conversations", ValidateToken, getConversations);
+router.get("/conversations/:id", ValidateToken, getConversation);
 
 // user Control Routes
 router.get("/check-auth", ValidateToken, checkAuth)

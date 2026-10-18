@@ -289,253 +289,265 @@ const UserRegister = () => {
                 <div className="w-full md:w-1/2 p-6 md:p-8">
 
                     <form onSubmit={handleSubmit}>
-
-                        {/* Heading */}
-
-                        <h1
-                            className="text-blue-950 text-center text-[23px] font-bold relative after:absolute after:bg-amber-500 after:top-9 after:left-1/2 after:-translate-x-1/2 after:rounded-lg after:w-15 after:h-1 mb-6"
+                        <fieldset
+                            disabled={isLoading}
+                            className="min-w-0"
                         >
-                            Register
-                        </h1>
+                            {/* Heading */}
+
+                            <h1
+                                className="text-blue-950 text-center text-[23px] font-bold relative after:absolute after:bg-amber-500 after:top-9 after:left-1/2 after:-translate-x-1/2 after:rounded-lg after:w-15 after:h-1 mb-6"
+                            >
+                                Register
+                            </h1>
 
 
-                        {/* Username */}
+                            {/* Username */}
 
-                        <Input
-                            inputLabel="Username"
-                            icon={User}
-                            type="text"
-                            name="username"
-                            value={formValues.username}
-                            onChange={handleChange}
-                            placeholder="Enter your Username"
-                        />
+                            <Input
+                                inputLabel="Username"
+                                icon={User}
+                                type="text"
+                                name="username"
+                                value={formValues.username}
+                                onChange={handleChange}
+                                placeholder="Enter your Username"
+                            />
 
-                        <p className="text-red-500 text-[12px] mt-0">
-                            {formErrors.username}
-                        </p>
-
-
-                        {/* Email */}
-
-                        <Input
-                            inputLabel="Email"
-                            icon={Mail}
-                            type="email"
-                            placeholder="example@gmail.com"
-                            name="email"
-                            value={formValues.email}
-                            onChange={handleChange}
-                        />
-
-                        <p className="text-red-500 text-[12px] mt-0">
-                            {formErrors.email}
-                        </p>
+                            <p className="text-red-500 text-[12px] mt-0">
+                                {formErrors.username}
+                            </p>
 
 
-                        {/* Matric Number */}
+                            {/* Email */}
 
-                        <Input
-                            inputLabel="Matric Number"
-                            icon={GraduationCap}
-                            type="text"
-                            placeholder="FUO/xx/xxx/xxxxx"
-                            name="matricNumber"
-                            value={formValues.matricNumber}
-                            onChange={handleChange}
-                        />
+                            <Input
+                                inputLabel="Email"
+                                icon={Mail}
+                                type="email"
+                                placeholder="example@gmail.com"
+                                name="email"
+                                value={formValues.email}
+                                onChange={handleChange}
+                            />
 
-                        <p className="text-red-500 text-[12px] mt-0">
-                            {formErrors.matricNumber}
-                        </p>
-
-
-                        {/* Password */}
-
-                        <Input
-                            inputLabel="Password"
-                            icon={Lock}
-                            type="password"
-                            placeholder="Enter password"
-                            name="password"
-                            value={formValues.password}
-                            onChange={handleChange}
-                        />
-
-                        <p className="text-red-500 text-[12px] mt-0">
-                            {formErrors.password}
-                        </p>
+                            <p className="text-red-500 text-[12px] mt-0">
+                                {formErrors.email}
+                            </p>
 
 
-                        {/* Confirm Password */}
+                            {/* Matric Number */}
 
-                        <Input
-                            inputLabel="Confirm Password"
-                            icon={Lock}
-                            type="password"
-                            placeholder="Confirm password"
-                            name="confirmPassword"
-                            value={formValues.confirmPassword}
-                            onChange={handleChange}
-                        />
+                            <Input
+                                inputLabel="Matric Number"
+                                icon={GraduationCap}
+                                type="text"
+                                placeholder="FUO/xx/xxx/xxxxx"
+                                name="matricNumber"
+                                value={formValues.matricNumber}
+                                onChange={handleChange}
+                            />
 
-                        <p className="text-red-500 text-[12px] mt-0">
-                            {formErrors.confirmPassword}
-                        </p>
+                            <p className="text-red-500 text-[12px] mt-0">
+                                {formErrors.matricNumber}
+                            </p>
 
 
-                        {/* Department */}
+                            {/* Password */}
 
-                        <div className="mb-4">
+                            <Input
+                                inputLabel="Password"
+                                icon={Lock}
+                                type="password"
+                                placeholder="Enter password"
+                                name="password"
+                                value={formValues.password}
+                                onChange={handleChange}
+                            />
+
+                            <p className="text-red-500 text-[12px] mt-0">
+                                {formErrors.password}
+                            </p>
+
+
+                            {/* Confirm Password */}
+
+                            <Input
+                                inputLabel="Confirm Password"
+                                icon={Lock}
+                                type="password"
+                                placeholder="Confirm password"
+                                name="confirmPassword"
+                                value={formValues.confirmPassword}
+                                onChange={handleChange}
+                            />
+
+                            <p className="text-red-500 text-[12px] mt-0">
+                                {formErrors.confirmPassword}
+                            </p>
+
+
+                            {/* Department */}
+
+                            <div className="mb-4">
+
+                                <label className="block pl-3 mb-1 text-blue-950">
+                                    Select Department
+                                </label>
+
+
+                                <select
+                                    className="w-full rounded-lg py-2 pl-3 pr-3 bg-gray-50 border border-gray-200 outline-none transition duration-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
+                                    name="department"
+                                    onChange={handleChange}
+                                    value={formValues.department}
+                                >
+
+                                    <option value="">
+                                        Select Department
+                                    </option>
+
+                                    <option value="Mechatronics Engineering">
+                                        Mechatronics Engineering
+                                    </option>
+
+                                    <option value="Mechanical">
+                                        Mechanical Engineering
+                                    </option>
+
+                                    <option value="Electrical Electronics Engineering">
+                                        Electrical Electronics Engineering
+                                    </option>
+
+                                    <option value="Civil Engineering">
+                                        Civil Engineering
+                                    </option>
+
+                                    <option value="Chemical Engineering">
+                                        Chemical Engineering
+                                    </option>
+
+                                    <option value="Petroleum and Gas Engineering"   >
+                                        Petroleum and Gas Engineering
+                                    </option>
+
+                                </select>
+
+                                <p className="text-red-500 text-[12px] mt-0">
+                                    {formErrors.department}
+                                </p>
+
+                            </div>
+
+
+                            {/* Level */}
 
                             <label className="block pl-3 mb-1 text-blue-950">
-                                Select Department
+                                Select Level
                             </label>
 
 
-                            <select
-                                className="w-full rounded-lg py-2 pl-3 pr-3 bg-gray-50 border border-gray-200 outline-none transition duration-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
-                                name="department"
-                                onChange={handleChange}
-                                value={formValues.department}
+                            <div className="w-full rounded-lg py-2 pr-3 mb-3 bg-gray-50">
+
+                                <select
+                                    className="w-full rounded-lg py-2 pl-3 pr-3 bg-gray-50 border border-gray-200 outline-none transition duration-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
+                                    name="level"
+                                    onChange={handleChange}
+                                    value={formValues.level}
+                                >
+
+                                    <option value="">
+                                        Select level
+                                    </option>
+
+                                    <option value="100">
+                                        100
+                                    </option>
+
+                                    <option value="200">
+                                        200
+                                    </option>
+
+                                    <option value="300">
+                                        300
+                                    </option>
+
+                                    <option value="400">
+                                        400
+                                    </option>
+
+                                    <option value="500">
+                                        500
+                                    </option>
+
+                                </select>
+
+                                <p className="text-red-500 text-[12px] mt-0">
+                                    {formErrors.level}
+                                </p>
+
+                            </div>
+
+
+                            {/* Register Button */}
+
+                            <motion.button
+                                type="submit"
+                                disabled={isLoading}
+                                whileHover={isLoading ? undefined : { scale: 1.02 }}
+                                className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-blue-950 text-white ${isLoading ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-amber-500 hover:scale-[1.02] hover:shadow-lg"}`}
                             >
 
-                                <option value="">
-                                    Select Department
-                                </option>
+                                {isLoading ? (
+                                    <>
+                                        <Loader className="animate-spin inline-block mr-2" size={20} />
+                                        Registering...
+                                    </>
+                                ) : (
+                                    "Register"
+                                )}
 
-                                <option value="Mechatronics Engineering">
-                                    Mechatronics Engineering
-                                </option>
+                            </motion.button>
 
-                                <option value="Mechanical">
-                                    Mechanical Engineering
-                                </option>
-
-                                <option value="Electrical Electronics Engineering">
-                                    Electrical Electronics Engineering
-                                </option>
-
-                                <option value="Civil Engineering">
-                                    Civil Engineering
-                                </option>
-
-                                <option value="Chemical Engineering">
-                                    Chemical Engineering
-                                </option>
-
-                                <option value="Petroleum and Gas Engineering"   >
-                                    Petroleum and Gas Engineering
-                                </option>
-
-                            </select>
-
-                            <p className="text-red-500 text-[12px] mt-0">
-                                {formErrors.department}
-                            </p>
-
-                        </div>
+                            <p>{serverError}</p>
 
 
-                        {/* Level */}
+                            {/* Backend Error */}
 
-                        <label className="block pl-3 mb-1 text-blue-950">
-                            Select Level
-                        </label>
-
-
-                        <div className="w-full rounded-lg py-2 pr-3 mb-3 bg-gray-50">
-
-                            <select
-                                className="w-full rounded-lg py-2 pl-3 pr-3 bg-gray-50 border border-gray-200 outline-none transition duration-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
-                                name="level"
-                                onChange={handleChange}
-                                value={formValues.level}
-                            >
-
-                                <option value="">
-                                    Select level
-                                </option>
-
-                                <option value="100">
-                                    100
-                                </option>
-
-                                <option value="200">
-                                    200
-                                </option>
-
-                                <option value="300">
-                                    300
-                                </option>
-
-                                <option value="400">
-                                    400
-                                </option>
-
-                                <option value="500">
-                                    500
-                                </option>
-
-                            </select>
-
-                            <p className="text-red-500 text-[12px] mt-0">
-                                {formErrors.level}
-                            </p>
-
-                        </div>
-
-
-                        {/* Register Button */}
-
-                        <motion.button
-                            type="submit"
-                            disabled={isLoading}
-                            whileHover={isLoading ? undefined : { scale: 1.02 }}
-                            className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-blue-950 text-white ${isLoading ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-amber-500 hover:scale-[1.02] hover:shadow-lg"}`}
-                        >
-
-                            {isLoading ? (
-                                <>
-                                    <Loader className="animate-spin inline-block mr-2" size={20} />
-                                    Registering...
-                                </>
-                            ) : (
-                                "Register"
+                            {error && (
+                                <p className="text-red-500 text-[12px] text-center mt-2">
+                                    {error}
+                                </p>
                             )}
 
-                        </motion.button>
 
-                        <p>{serverError}</p>
+                            {/* Login */}
 
+                            <div className="flex flex-col items-center">
 
-                        {/* Backend Error */}
+                                <p className="mb-2">
+                                    Already Have an account?
+                                </p>
 
-                        {error && (
-                            <p className="text-red-500 text-[12px] text-center mt-2">
-                                {error}
-                            </p>
-                        )}
+                                
+                                <NavLink
+                                    to="/login"
+                                    onClick={(e) => {
+                                        if (isLoading) e.preventDefault();
+                                    }}
+                                    aria-disabled={isLoading}
+                                    tabIndex={isLoading ? -1 : 0}
+                                    className={`transition duration-500 text-white font-bold bg-blue-950 rounded-sm w-full px-8 py-2 text-center ${
+                                        isLoading
+                                            ? "cursor-not-allowed opacity-50 pointer-events-none"
+                                            : "hover:bg-amber-500"
+                                    }`}
+                                >
+                                    Login
+                                </NavLink>
 
-
-                        {/* Login */}
-
-                        <div className="flex flex-col items-center">
-
-                            <p className="mb-2">
-                                Already Have an account?
-                            </p>
-
-                            <NavLink
-                                disabled={isLoading}
-                                to="/login"
-                                className="hover:bg-amber-500 transition duration-500 text-white font-bold bg-blue-950 rounded-sm w-full px-8 py-2 text-center"
-                            >
-                                Login
-                            </NavLink>
-
-                        </div>
-
+                            </div>
+                        </fieldset>         
                     </form>
 
                 </div>

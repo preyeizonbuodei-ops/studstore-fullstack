@@ -128,131 +128,143 @@ const AdminRegister = () => {
                         </div>
 
                         <form onSubmit={handleSubmit} className="mx-3">
-
-                            <Input
-                                placeholder="Username"
-                                inputLabel="Username"
-                                icon={User}
-                                type="text"
-                                name="username"
-                                value={formValues.username}
-                                onChange={handleChange}
-                            />
-
-                            <p className="text-red-500">
-                                {formErrors.username}
-                            </p>
-
-
-                            <Input
-                                placeholder="Email"
-                                inputLabel="Email"
-                                icon={Mail}
-                                type="email"
-                                name="email"
-                                value={formValues.email}
-                                onChange={handleChange}
-                            />
-
-                            <p className="text-red-500">
-                                {formErrors.email}
-                            </p>
-
-
-                            <Input
-                                placeholder="Password"
-                                inputLabel="Password"
-                                icon={Lock}
-                                type="password"
-                                name="password"
-                                value={formValues.password}
-                                onChange={handleChange}
-                            />
-
-                            <p className="text-red-500">
-                                {formErrors.password}
-                            </p>
-
-
-                            <Input
-                                placeholder="Confirm Password"
-                                inputLabel="Confirm Password"
-                                icon={KeyIcon}
-                                value={formValues.confirmPassword}
-                                type="password"
-                                name="confirmPassword"
-                                onChange={handleChange}
-                            />
-
-                            <p className="text-red-500">
-                                {formErrors.confirmPassword}
-                            </p>
-
-
-                            <Input
-                                placeholder="Admin key"
-                                inputLabel="Admin key"
-                                icon={GraduationCap}
-                                type="password"
-                                name="adminKey"
-                                value={formValues.adminKey}
-                                onChange={handleChange}
-                            />
-
-                            <p className="text-red-500">
-                                {formErrors.adminKey}
-                            </p>
-
-
-                            {error && (
-                                <p className="text-red-500 text-center mb-3">
-                                    {error}
-                                </p>
-                            )}
-
-
-                            <motion.button
-                                type="submit"
+                            <fieldset
                                 disabled={isLoading}
-                                whileHover={
-                                    isLoading
-                                        ? undefined
-                                        : { scale: 1.02 }
-                                }
-                                className={`bg-blue-500 text-center text-[20px] w-full py-2 rounded-lg font-bold text-white mb-4 transition duration-500 ${
-                                    isLoading
-                                        ? "cursor-not-allowed opacity-75"
-                                        : "cursor-pointer hover:bg-amber-500 hover:scale-[1.02] hover:shadow-lg"
-                                }`}
+                                className="min-w-0"
                             >
-                                {isLoading ? (
-                                    <>
-                                        <Loader
-                                            className="animate-spin inline-block mr-2"
-                                            size={20}
-                                        />
-                                        Registering...
-                                    </>
-                                ) : (
-                                    "Register"
+                                <Input
+                                    placeholder="Username"
+                                    inputLabel="Username"
+                                    icon={User}
+                                    type="text"
+                                    name="username"
+                                    value={formValues.username}
+                                    onChange={handleChange}
+                                />
+
+                                <p className="text-red-500">
+                                    {formErrors.username}
+                                </p>
+
+
+                                <Input
+                                    placeholder="Email"
+                                    inputLabel="Email"
+                                    icon={Mail}
+                                    type="email"
+                                    name="email"
+                                    value={formValues.email}
+                                    onChange={handleChange}
+                                />
+
+                                <p className="text-red-500">
+                                    {formErrors.email}
+                                </p>
+
+
+                                <Input
+                                    placeholder="Password"
+                                    inputLabel="Password"
+                                    icon={Lock}
+                                    type="password"
+                                    name="password"
+                                    value={formValues.password}
+                                    onChange={handleChange}
+                                />
+
+                                <p className="text-red-500">
+                                    {formErrors.password}
+                                </p>
+
+
+                                <Input
+                                    placeholder="Confirm Password"
+                                    inputLabel="Confirm Password"
+                                    icon={KeyIcon}
+                                    value={formValues.confirmPassword}
+                                    type="password"
+                                    name="confirmPassword"
+                                    onChange={handleChange}
+                                />
+
+                                <p className="text-red-500">
+                                    {formErrors.confirmPassword}
+                                </p>
+
+
+                                <Input
+                                    placeholder="Admin key"
+                                    inputLabel="Admin key"
+                                    icon={GraduationCap}
+                                    type="password"
+                                    name="adminKey"
+                                    value={formValues.adminKey}
+                                    onChange={handleChange}
+                                />
+
+                                <p className="text-red-500">
+                                    {formErrors.adminKey}
+                                </p>
+
+
+                                {error && (
+                                    <p className="text-red-500 text-center mb-3">
+                                        {error}
+                                    </p>
                                 )}
-                            </motion.button>
 
 
-                            <div disabled={isLoading} 
-                            className="flex justify-between mb-6">
-                                <h3>
-                                    Already have an account?
-                                </h3>
-
-                                <NavLink
-                                    to="/admin-login"
-                                    className="text-blue-500"
+                                <motion.button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    whileHover={
+                                        isLoading
+                                            ? undefined
+                                            : { scale: 1.02 }
+                                    }
+                                    className={`bg-blue-500 text-center text-[20px] w-full py-2 rounded-lg font-bold text-white mb-4 transition duration-500 ${
+                                        isLoading
+                                            ? "cursor-not-allowed opacity-75"
+                                            : "cursor-pointer hover:bg-amber-500 hover:scale-[1.02] hover:shadow-lg"
+                                    }`}
                                 >
-                                    Login
-                                </NavLink>
-                            </div>
+                                    {isLoading ? (
+                                        <>
+                                            <Loader
+                                                className="animate-spin inline-block mr-2"
+                                                size={20}
+                                            />
+                                            Registering...
+                                        </>
+                                    ) : (
+                                        "Register"
+                                    )}
+                                </motion.button>
 
+
+                                <div disabled={isLoading} 
+                                className="flex justify-between mb-6">
+                                    <h3>
+                                        Already have an account?
+                                    </h3>
+
+                                    <NavLink
+                                        to="/admin-login"
+                                        onClick={(e) => {
+                                            if (isLoading) e.preventDefault();
+                                        }}
+                                        aria-disabled={isLoading}
+                                        tabIndex={isLoading ? -1 : 0}
+                                        className={`transition duration-500 text-white font-bold bg-blue-950 rounded-sm w-full px-8 py-2 text-center ${
+                                            isLoading
+                                                ? "cursor-not-allowed opacity-50 pointer-events-none"
+                                                : "hover:bg-amber-500"
+                                        }`}
+                                    >
+                                        Login
+                                    </NavLink>
+                                </div>
+                            </fieldset>
                         </form>
                     </div>
                 </motion.div>

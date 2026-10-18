@@ -151,3 +151,119 @@ exports.getMajorAreaById = async (req, res) => {
         });
     }
 };
+
+// Admin: Update a major area
+exports.updateMajorArea = async (req, res) => {
+    try {
+        const { majorAreaId } = req.params;
+
+        if (!/^[0-9a-fA-F]{24}$/.test(majorAreaId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid major area ID",
+            });
+        }
+
+        const { error, value } = majorAreaValidation.validate(req.body);
+
+        if (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message,
+            });
+        }
+
+        const majorArea = await MajorArea.findById(majorAreaId);
+
+        if (!majorArea) {
+            return res.status(404).json({
+                success: false,
+                message: "Major area not found",
+            });
+        }
+
+        const departmentExists = await Department.findById(value.department);
+
+        if (!departmentExists) {
+            return res.status(404).json({
+                success: false,
+                message: "Department not found",
+            });
+        }
+
+        const existingMajorArea = await MajorArea.findOne({
+            _id: { $ne: majorAreaId },
+            name: value.name,
+            department: value.department,
+        });
+
+        if (existingMajorArea) {
+            return res.status(409).json({
+                success: false,
+                message: "This major area already exists in this department",
+            });
+        }
+
+        Object.assign(majorArea, value);
+
+        await majorArea.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Major area updated successfully",
+            majorArea,
+        });
+    } catch (error) {
+        if (error.code === 11000) {
+            return res.status(409).json({
+                success: false,
+                message: "This major area already exists in this department",
+            });
+        }
+
+        console.error("Update Major Area Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
+
+
+// Admin: Delete a major area
+exports.deleteMajorArea = async (req, res) => {
+    try {
+        const { majorAreaId } = req.params;
+
+        if (!/^[0-9a-fA-F]{24}$/.test(majorAreaId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid major area ID",
+            });
+        }
+
+        const majorArea = await MajorArea.findById(majorAreaId);
+
+        if (!majorArea) {
+            return res.status(404).json({
+                success: false,
+                message: "Major area not found",
+            });
+        }
+
+        await MajorArea.findByIdAndDelete(majorAreaId);
+
+        return res.status(200).json({
+            success: true,
+            message: "Major area deleted successfully",
+        });
+    } catch (error) {
+        console.error("Delete Major Area Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};

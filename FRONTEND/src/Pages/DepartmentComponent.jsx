@@ -47,18 +47,30 @@ const DepartmentComponent = () => {
                         </p>
                     )}
 
+                    
                     {!isLoading && error && (
-                        <div className="py-10 text-center">
-                            <p className="text-red-600">{error}</p>
+                        <div className="flex justify-center py-10">
+                            <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+                                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+                                    <Settings size={28} className="text-amber-600" />
+                                </div>
 
-                            <button
-                                onClick={() =>
-                                    getDepartments().catch(() => {})
-                                }
-                                className="mt-4 rounded-lg bg-blue-950 px-5 py-2 text-white"
-                            >
-                                Try Again
-                            </button>
+                                <h3 className="mt-4 text-xl font-bold text-blue-950">
+                                    Oops! Something went wrong
+                                </h3>
+
+                                <p className="mt-2 text-sm leading-6 text-gray-600">
+                                    We couldn't load the departments right now.
+                                    Please try again in a moment.
+                                </p>
+
+                                <button
+                                    onClick={() => getDepartments().catch(() => {})}
+                                    className="mt-5 rounded-lg bg-blue-950 px-6 py-2.5 font-medium text-white transition hover:bg-blue-900"
+                                >
+                                    Try Again
+                                </button>
+                            </div>
                         </div>
                     )}
 

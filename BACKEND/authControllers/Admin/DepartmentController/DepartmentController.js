@@ -122,10 +122,121 @@ exports.getDepartmentById = async (req, res) => {
     }
 };
 
-exports.DeleteDepartment = async ( req, res ) => {
-    try {
-        
-    } catch (error) {
-        console.log(error)
+
+const mongoose = require("mongoose");
+
+exports.UpdateDepartment = async (req, res) => {
+  try {
+    const { departmentId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid department ID",
+      });
     }
-}
+
+    const { error, value } = departmentValidation.validate(req.body);
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+      });
+    }
+
+    const department = await Department.findById(departmentId);
+
+    if (!department) {
+      return res.status(404).json({
+        success: false,
+        message: "Department not found",
+      });
+    }
+
+    const duplicateDepartment = await Department.findOne({
+      name: value.name,
+      _id: { $ne: departmentId },
+    });
+
+    if (duplicateDepartment) {
+      return res.status(409).json({
+        success: false,
+        message: "Another department already uses this name",
+      });
+    }
+
+    Object.assign(department, value);
+
+    await department.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Department updated successfully",
+      department,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Department already exists",
+      });
+    }
+
+    console.error("Update Department Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update department",
+    });
+  }
+};
+
+exports.DeleteDepartment = async (req, res) => {
+  try {
+    const { departmentId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid department ID",
+      });
+    }
+
+    const department = await Department.findById(departmentId);
+
+    if (!department) {
+      return res.status(404).json({
+        success: false,
+        message: "Department not found",
+      });
+    }
+
+    const majorAreaCount = await MajorArea.countDocuments({
+      department: departmentId,
+    });
+
+    if (majorAreaCount > 0) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "This department has major areas. Delete or reassign its major areas before deleting the department.",
+        majorAreaCount,
+      });
+    }
+
+    await Department.findByIdAndDelete(departmentId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Department deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete Department Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete department",
+    });
+  }
+};

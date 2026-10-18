@@ -1,7 +1,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { ArrowRight, ExternalLink, FileText } from "lucide-react";
+import {
+    ArrowRight,
+    ExternalLink,
+    FileText,
+    AlertCircle,
+} from "lucide-react";
 import { motion } from "motion/react";
 
 import image1 from "../../Image/lab1.jpg";
@@ -9,8 +14,6 @@ import image2 from "../../Image/lab2.jpg";
 import image3 from "../../Image/lab3.jpg";
 import image4 from "../../Image/work4.jpg";
 import { useResearchPaperStore } from "../../DashBoards/UserDashboard/CourseStore/UserResearchPaperStore";
-
-
 
 const images = [image1, image2, image3, image4];
 
@@ -26,17 +29,20 @@ const ResearchHero = () => {
     } = useResearchPaperStore();
 
     useEffect(() => {
-        getAllResearchPapers();
+        getAllResearchPapers().catch(() => {});
     }, [getAllResearchPapers]);
 
-    // Get unique major areas represented by the research papers
     const majorAreas = useMemo(() => {
         const areas = new Map();
 
         researchPapers.forEach((paper) => {
             const area = paper.majorAreaId;
 
-            if (area && typeof area === "object" && area._id) {
+            if (
+                area &&
+                typeof area === "object" &&
+                area._id
+            ) {
                 areas.set(area._id, area.name || "Major Area");
             }
         });
@@ -44,7 +50,6 @@ const ResearchHero = () => {
         return Array.from(areas, ([id, name]) => ({ id, name }));
     }, [researchPapers]);
 
-    // Search and filter research papers
     const filteredPapers = useMemo(() => {
         return researchPapers.filter((paper) => {
             const areaId =
@@ -72,8 +77,11 @@ const ResearchHero = () => {
         });
     }, [researchPapers, selectedMajorArea, search]);
 
-    // Show only four papers in this homepage section
     const recentPapers = filteredPapers.slice(0, 4);
+
+    const handleRetry = () => {
+        getAllResearchPapers().catch(() => {});
+    };
 
     return (
         <section className="w-full px-4 sm:px-6 lg:px-10">
@@ -144,8 +152,31 @@ const ResearchHero = () => {
                         ))}
                     </div>
                 ) : error ? (
-                    <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-                        {error}
+                    <div className="flex justify-center py-8">
+                        <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+                                <AlertCircle
+                                    size={28}
+                                    className="text-amber-600"
+                                />
+                            </div>
+
+                            <h3 className="mt-4 text-xl font-bold text-slate-900">
+                                Oops! Something went wrong
+                            </h3>
+
+                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                                We couldn't load the research papers right
+                                now. Please try again in a moment.
+                            </p>
+
+                            <button
+                                onClick={handleRetry}
+                                className="mt-5 rounded-lg bg-blue-950 px-6 py-2.5 font-semibold text-white transition hover:bg-blue-800"
+                            >
+                                Try Again
+                            </button>
+                        </div>
                     </div>
                 ) : recentPapers.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-300 px-6 py-12 text-center">
@@ -242,7 +273,7 @@ const ResearchHero = () => {
                 {!loading && !error && filteredPapers.length > 4 && (
                     <div className="mt-8 text-center">
                         <NavLink
-                            to="/research/papers"
+                            to="/research-papers"
                             className="inline-flex items-center gap-2 rounded-lg border border-blue-950 px-6 py-3 font-semibold text-blue-950 transition hover:bg-blue-950 hover:text-white"
                         >
                             Explore All {filteredPapers.length} Results
@@ -256,4 +287,3 @@ const ResearchHero = () => {
 };
 
 export default ResearchHero;
- 

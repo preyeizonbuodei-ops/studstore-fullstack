@@ -8,9 +8,9 @@ const { CreateLesson, GetCourses,  GetLessons, GetLessonsByCourse, UpdateLesson,
 const { CreateCourse, DeleteCourse, UpdateCourse } = require("../authControllers/Admin/CourseController");
 const { CreateTopic, GetTopics, UpdateTopic, DeleteTopic } = require("../authControllers/Admin/TopicController");
 const { GetAdminRefreshToken } = require("../authControllers/adminRegister");
-const { CreateDepartment, getDepartments } = require("../authControllers/Admin/DepartmentController/DepartmentController");
-const { createMajorArea, getMajorAreas, getMajorAreaById } = require("../authControllers/Admin/DepartmentController/MajorAreaController");
-const { createMajorAreaTopic, getAllMajorAreaTopics, getMajorAreaTopicById } = require("../authControllers/Admin/DepartmentController/MajorTopicController");
+const { CreateDepartment, getDepartments, UpdateDepartment, DeleteDepartment } = require("../authControllers/Admin/DepartmentController/DepartmentController");
+const { createMajorArea, getMajorAreas, getMajorAreaById, updateMajorArea, deleteMajorArea } = require("../authControllers/Admin/DepartmentController/MajorAreaController");
+const { createMajorAreaTopic, getAllMajorAreaTopics, getMajorAreaTopicById, updateMajorAreaTopic, deleteMajorAreaTopic } = require("../authControllers/Admin/DepartmentController/MajorTopicController");
 const { createResearchPaper } = require("../authControllers/Admin/DepartmentController/ResearchAreaController");
 const { getAdminDashboardStats } = require("../authControllers/Admin/GetAdminStatController");
 const { getAllUsers, updateUser, deleteUser } = require("../authControllers/register");
@@ -47,16 +47,22 @@ adminRouter.delete ("/topics/:topicId", ValidateAdminToken, authorizedAdminRoles
 // Department Routes
 adminRouter.post("/create-department", ValidateAdminToken, authorizedAdminRoles("Admin"), CreateLimiter, CreateDepartment)
 adminRouter.get("/get-department", getDepartments)
+adminRouter.patch("/update-department/:departmentId", ValidateAdminToken, authorizedAdminRoles("Admin"),  UpdateDepartment)
+adminRouter.delete("/delete-department/:departmentId", ValidateAdminToken, authorizedAdminRoles("Admin"),  DeleteDepartment)
 
 adminRouter.post("/create-major-area", ValidateAdminToken, authorizedAdminRoles("Admin"),  createMajorArea)
 adminRouter.get("/get-major-area", ValidateAdminToken, authorizedAdminRoles("Admin"),  getMajorAreas)
 adminRouter.get("/major-area/:majorAreaId", ValidateAdminToken, authorizedAdminRoles("Admin"),  getMajorAreaById)
+adminRouter.patch("/update-major-area/:majorAreaId", ValidateAdminToken, authorizedAdminRoles("Admin"),  updateMajorArea)
+adminRouter.delete("/delete-major-area/:majorAreaId", ValidateAdminToken, authorizedAdminRoles("Admin"),  deleteMajorArea)
 // adminRouter.post("/major-area/:departmentId", CreateDepartment)
 
 // Major Topic Route
 adminRouter.post("/create-major-area-topic", ValidateAdminToken, authorizedAdminRoles("Admin"),  createMajorAreaTopic)
 adminRouter.get("/get-major-area-topic", ValidateAdminToken, authorizedAdminRoles("Admin"),  getAllMajorAreaTopics)
 adminRouter.get("/get-major-area-topic/:majorTopicId", ValidateAdminToken, authorizedAdminRoles("Admin"),  getMajorAreaTopicById)
+adminRouter.patch( "/update-major-area-topic/:majorTopicId", ValidateAdminToken, authorizedAdminRoles("Admin"), updateMajorAreaTopic);
+adminRouter.delete( "/delete-major-area-topic/:majorTopicId", ValidateAdminToken, authorizedAdminRoles("Admin"), deleteMajorAreaTopic);
 
 // Research Paper route
 adminRouter.post("/create-research-paper", ValidateAdminToken, authorizedAdminRoles("Admin"),  createResearchPaper)
