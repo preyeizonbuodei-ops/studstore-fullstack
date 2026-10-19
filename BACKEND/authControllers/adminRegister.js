@@ -13,17 +13,16 @@ const isProduction = process.env.NODE_ENV === "production";
 // AUTH COOKIE OPTIONS
 const authCookieOptions = (maxAge) => ({
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    secure: true,
+    sameSite: "none",
     path: "/",
     maxAge,
 });
 
-// COOKIE CLEARING OPTIONS
 const clearAuthCookieOptions = () => ({
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    secure: true,
+    sameSite: "none",
     path: "/",
 });
 
