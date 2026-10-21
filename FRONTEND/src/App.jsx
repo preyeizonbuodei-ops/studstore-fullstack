@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { useAuthStore } from "./Store/AuthStore";
 import { useEffect } from "react";
 import { AdminRegister as adminCheck } from "./Store/AdminStore";
@@ -6,7 +6,6 @@ import { AdminRegister as adminCheck } from "./Store/AdminStore";
 import Home from "./Pages/Home";
 import Navbar from "./Components/Navbar";
 import About from "./Pages/About";
-
 import Research from "./Pages/Research";
 import Resources from "./Pages/Resources";
 import News from "./Pages/News & Events";
@@ -46,6 +45,7 @@ import TopicDetails from "./DashBoards/UserDashboard/UserPages/Component/TopicId
 import Materials from "./DashBoards/UserDashboard/UserPages/Component/ResourcesPage";
 import Profile from "./DashBoards/UserDashboard/UserPages/Component/Profile";
 import Settings from "./DashBoards/UserDashboard/UserPages/Component/Settings";
+
 import AdminCreateMajorArea from "./DashBoards/AdminDashboard/AdminPageForms/CreateMajorAreaForm";
 import CreateMajorAreaTopic from "./DashBoards/AdminDashboard/AdminPageForms/MajorTopicForm";
 import CreateResearchPaper from "./DashBoards/AdminDashboard/AdminPageForms/CreateResearchPaper";
@@ -67,15 +67,20 @@ import AdminProtectedRoute from "./AdminProtectedRoute";
 import "./App.css";
 
 function App() {
+    const location = useLocation();
+
+    // Hide the floating AI on all admin routes.
+    const isAdminPage = location.pathname.startsWith("/admin");
+
     const checkAuth = useAuthStore(
         (state) => state.checkAuth
     );
 
     useEffect(() => {
         checkAuth();
-    }, []);
+    }, [checkAuth]);
 
-    // Used to show the AI tutor only to logged-in students
+    // Used to show the AI tutor only to logged-in students.
     const user = useAuthStore((state) => state.user);
 
     const AdminCheckAuth = adminCheck(
@@ -84,12 +89,11 @@ function App() {
 
     useEffect(() => {
         AdminCheckAuth();
-    }, []);
+    }, [AdminCheckAuth]);
 
     return (
         <>
             <Routes>
-
                 {/* ==================== PUBLIC ==================== */}
 
                 <Route
@@ -165,7 +169,6 @@ function App() {
                 {/* ==================== GUEST ROUTES ==================== */}
 
                 <Route element={<GuestRoute />}>
-
                     <Route
                         path="/register"
                         element={
@@ -205,7 +208,6 @@ function App() {
                         path="/reset-password"
                         element={<ResetPassword />}
                     />
-
                 </Route>
 
                 {/* ==================== DEPARTMENTS ==================== */}
@@ -218,7 +220,6 @@ function App() {
                 {/* ==================== ADMIN ==================== */}
 
                 <Route element={<AdminProtectedRoute />}>
-
                     <Route
                         path="/admin-dashboard"
                         element={<AdminSidebar />}
@@ -252,7 +253,6 @@ function App() {
                             path="settings"
                             element={<AdminSettings />}
                         />
-
                     </Route>
 
                     <Route
@@ -271,12 +271,14 @@ function App() {
                     />
 
                     {/* Department Routes */}
+
                     <Route
                         path="/admin/create-department"
                         element={<CreateDepartment />}
                     />
 
                     {/* Create Major Area */}
+
                     <Route
                         path="/admin/create-major-area"
                         element={<AdminCreateMajorArea />}
@@ -291,13 +293,11 @@ function App() {
                         path="/admin/create-research-paper"
                         element={<CreateResearchPaper />}
                     />
-
                 </Route>
 
                 {/* ==================== ADMIN GUEST ==================== */}
 
                 <Route element={<AdminGuestRoute />}>
-
                     <Route
                         path="/admin-register"
                         element={<AdminRegister />}
@@ -312,16 +312,14 @@ function App() {
                         path="/admin-verify-email"
                         element={<AdminVerifyEmail />}
                     />
-
                 </Route>
 
                 {/* ==================== STUDENT ==================== */}
 
                 <Route element={<ProtectedRoute />}>
+                    {/* User Dashboard Layout */}
 
-                    {/* USER DASHBOARD LAYOUT */}
                     <Route element={<UserDashBoard />}>
-
                         <Route
                             path="/me"
                             element={<UserLanding />}
@@ -337,7 +335,8 @@ function App() {
                             element={<Courses />}
                         />
 
-                        {/* COURSE LESSONS */}
+                        {/* Course Lessons */}
+
                         <Route
                             path="/courses/:courseId/lesson"
                             element={<Lessons />}
@@ -382,10 +381,6 @@ function App() {
                             path="/major-area-topics/:majorTopicId"
                             element={<MajorAreaTopicDetails />}
                         />
-
-                        {/* LESSON TOPICS */}
-                        {/* We will add this after creating Topics */}
-
                     </Route>
 
                     <Route
@@ -393,11 +388,10 @@ function App() {
                         element={<DepartmentDetails />}
                     />
                 </Route>
-
             </Routes>
 
-            {/* AI tutor: outside <Routes> so it shows on every page for logged-in students */}
-            {<StudStoreAi />}
+            {/* Floating AI: hidden on admin pages */}
+            {!isAdminPage && <StudStoreAi />}
         </>
     );
 }
