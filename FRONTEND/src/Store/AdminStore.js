@@ -145,44 +145,54 @@ export const AdminRegister = create((set) => ({
     // ADMIN LOGIN
     // =========================
     
-    login: async (email, password, adminKey) => {
+   // =========================
+// ADMIN LOGIN
+// =========================
+login: async (email, password, adminKey) => {
+    set({
+        isLoading: true,
+        error: null,
+    });
+
+    try {
+        const response = await axios.post(
+            `${API_URL}/login`,
+            {
+                email,
+                password,
+                adminKey,
+            },
+            {
+                withCredentials: true,
+            }
+        );
+
         set({
-            isLoading: true,
-            error: null
+            admin: response.data.admin,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
         });
 
-        try {
-            const response = await axios.post(
-                `${API_URL}/login`,
-                {
-                    email,
-                    password,
-                    adminKey
-                }
-            );
+        return response.data;
+            } catch (error) {
+                console.error(
+                    "Admin login error:",
+                    error.response?.data || error.message
+                );
 
-            set({
-                admin: response.data.admin,
-                isAuthenticated: true,
-                isLoading: false,
-                error: null
-            });
+                set({
+                    admin: null,
+                    isAuthenticated: false,
+                    isLoading: false,
+                    error:
+                        error.response?.data?.message ||
+                        "Error logging in",
+                });
 
-            return response.data;
-
-        } catch (error) {
-            set({
-                admin: null,
-                isAuthenticated: false,
-                isLoading: false,
-                error:
-                    error.response?.data?.message ||
-                    "Error Logging in"
-            });
-
-            throw error;
-        }
-    },
+                throw error;
+            }
+        },
 
 
 

@@ -11,10 +11,7 @@ const CreateLessonForm = () => {
     const [formData, setFormData] = useState({
         courseId: "",
         title: "",
-        lessonNumber: "",
-        videoUrl: "",
-        material: "",
-        content: ""
+        lessonNumber: ""
     });
 
     const [loadingCourses, setLoadingCourses] = useState(true);
@@ -147,10 +144,7 @@ const CreateLessonForm = () => {
                 setFormData({
                     courseId: "",
                     title: "",
-                    lessonNumber: "",
-                    videoUrl: "",
-                    material: "",
-                    content: ""
+                    lessonNumber: ""
                 });
 
             }
@@ -348,109 +342,8 @@ const CreateLessonForm = () => {
 
                 {/* Video URL */}
 
-                <div className="mt-6">
-
-                    <label
-                        htmlFor="videoUrl"
-                        className="mb-2 block text-sm font-semibold text-gray-700"
-                    >
-                        Video URL
-                    </label>
-
-                    <div className="relative">
-
-                        <Video
-                            size={18}
-                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        />
-
-                        <input
-                            id="videoUrl"
-                            name="videoUrl"
-                            type="url"
-                            value={formData.videoUrl}
-                            onChange={handleChange}
-                            placeholder="https://youtube.com/watch?v=..."
-                            className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-blue-950 focus:bg-white"
-                        />
-
-                    </div>
-
-                    <p className="mt-1 text-xs text-gray-400">
-                        Optional. Add a YouTube or other video URL.
-                    </p>
-
-                </div>
-
 
                 {/* Study Material */}
-
-                <div className="mt-6">
-
-                    <label
-                        htmlFor="material"
-                        className="mb-2 block text-sm font-semibold text-gray-700"
-                    >
-                        Study Material URL
-                    </label>
-
-                    <div className="relative">
-
-                        <Link
-                            size={18}
-                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        />
-
-                        <input
-                            id="material"
-                            name="material"
-                            type="url"
-                            value={formData.material}
-                            onChange={handleChange}
-                            placeholder="https://..."
-                            className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-blue-950 focus:bg-white"
-                        />
-
-                    </div>
-
-                    <p className="mt-1 text-xs text-gray-400">
-                        Optional. Link to a PDF, document, or external material.
-                    </p>
-
-                </div>
-
-
-                {/* Content */}
-
-                <div className="mt-6">
-
-                    <label
-                        htmlFor="content"
-                        className="mb-2 block text-sm font-semibold text-gray-700"
-                    >
-                        Topic Content
-                    </label>
-
-                    <div className="relative">
-
-                        <FileText
-                            size={18}
-                            className="pointer-events-none absolute left-3 top-3.5 text-gray-400"
-                        />
-
-                        <textarea
-                            id="content"
-                            name="content"
-                            value={formData.content}
-                            onChange={handleChange}
-                            rows={8}
-                            placeholder="Write the lesson content here..."
-                            className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm leading-6 outline-none transition focus:border-blue-950 focus:bg-white"
-                        />
-
-                    </div>
-
-                </div>
 
 
                 {/* Submit */}

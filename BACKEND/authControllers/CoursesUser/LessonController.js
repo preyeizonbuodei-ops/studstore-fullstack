@@ -11,9 +11,7 @@ exports.CreateLesson = async (req, res) => {
             courseId,
             title,
             lessonNumber,
-            videoUrl,
-            material,
-            content
+
         } = req.body;
 
 
@@ -21,9 +19,6 @@ exports.CreateLesson = async (req, res) => {
             courseId,
             title,
             lessonNumber,
-            videoUrl,
-            material,
-            content
         });
 
 
@@ -50,9 +45,6 @@ exports.CreateLesson = async (req, res) => {
             courseId,
             title,
             lessonNumber,
-            videoUrl,
-            material,
-            content
         });
 
 

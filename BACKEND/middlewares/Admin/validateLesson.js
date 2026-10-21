@@ -11,13 +11,4 @@ exports.ValidateLesson = joi.object({
     lessonNumber: joi.number()
         .required(),
 
-    videoUrl: joi.string()
-        .optional(),
-
-    material: joi.string()
-        .optional(),
-
-    content: joi.string()
-        .optional()
-
 });
