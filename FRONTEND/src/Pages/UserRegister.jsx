@@ -526,7 +526,7 @@ const UserRegister = () => {
                             <div className="flex items-center justify-space-around">
 
                                 <p className="mb-2">
-                                    Already Have an account?
+                                    Already have an account?
                                 </p>
 
                                 
