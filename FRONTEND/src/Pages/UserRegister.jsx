@@ -495,7 +495,7 @@ const UserRegister = () => {
                                 type="submit"
                                 disabled={isLoading}
                                 whileHover={isLoading ? undefined : { scale: 1.02 }}
-                                className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-blue-950 text-white ${isLoading ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-amber-500 hover:scale-[1.02] hover:shadow-lg"}`}
+                                className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-blue-900 text-white ${isLoading ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-blue-950 hover:scale-[1.02] hover:shadow-lg"}`}
                             >
 
                                 {isLoading ? (
@@ -523,26 +523,15 @@ const UserRegister = () => {
 
                             {/* Login */}
 
-                            <div className="flex flex-col items-center">
+                            <div className="flex items-center justify-space-around">
 
                                 <p className="mb-2">
                                     Already Have an account?
                                 </p>
 
                                 
-                                <NavLink
+                                <NavLink className="text-blue-500">
                                     to="/login"
-                                    onClick={(e) => {
-                                        if (isLoading) e.preventDefault();
-                                    }}
-                                    aria-disabled={isLoading}
-                                    tabIndex={isLoading ? -1 : 0}
-                                    className={`transition duration-500 text-white font-bold bg-blue-950 rounded-sm w-full px-8 py-2 text-center ${
-                                        isLoading
-                                            ? "cursor-not-allowed opacity-50 pointer-events-none"
-                                            : "hover:bg-amber-500"
-                                    }`}
-                                >
                                     Login
                                 </NavLink>
 
