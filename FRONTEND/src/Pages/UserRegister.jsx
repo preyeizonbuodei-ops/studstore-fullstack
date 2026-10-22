@@ -523,15 +523,14 @@ const UserRegister = () => {
 
                             {/* Login */}
 
-                            <div className="flex items-center justify-space-around">
+                            <div className="flex items-center justify-space-around mt-2">
 
                                 <p className="mb-2">
                                     Already have an account?
                                 </p>
 
                                 
-                                <NavLink className="text-blue-500">
-                                    to="/login"
+                                <NavLink className="text-blue-500" to="/login">
                                     Login
                                 </NavLink>
 
