@@ -732,7 +732,7 @@ const AdminMainContent = () => {
                                                 Topics
                                             </h2>
                                             <p className="mt-1 text-xs text-gray-400">
-                                                Topics belong to this course. Expand a topic to manage its lessons.
+                                                Topics are managed at the course level. Add topics here, then expand a topic to manage its lessons.
                                             </p>
                                         </div>
 
