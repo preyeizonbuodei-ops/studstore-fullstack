@@ -2,7 +2,7 @@
 const User = require("../../modules/registerSchema");
 const Lesson = require("../../modules/CourseModuels/LessonSchema");
 const SavedMaterial = require("../../modules/CourseModuels/SaveMaterialSchema");
-const Topic = require("../../modules/CourseModuels/TopicsSchema");
+const Topic = require("../../modules/CourseModuels/TopicSchema");
 
 
 exports.SaveMaterial = async (req, res) => {

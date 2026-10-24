@@ -1,13 +1,13 @@
-
 import axios from "axios";
 import { create } from "zustand";
 
-const API_URL = "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/admin";
+const API_URL =
+    "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/admin";
 
 axios.defaults.withCredentials = true;
 
 const useLessonStore = create(() => ({
-    // Create a lesson
+    // Create a lesson inside a topic
     createLesson: async (lessonData) => {
         try {
             const response = await axios.post(
@@ -15,13 +15,13 @@ const useLessonStore = create(() => ({
                 lessonData
             );
 
-            
             return response.data;
         } catch (error) {
-            console.log(
+            console.error(
                 "CREATE LESSON ERROR:",
                 error.response?.data || error
             );
+
             throw error;
         }
     },
@@ -29,52 +29,62 @@ const useLessonStore = create(() => ({
     // Get all lessons
     getLessons: async () => {
         try {
-            const response = await axios.get(`${API_URL}/get-lesson`);
+            const response = await axios.get(
+                `${API_URL}/get-lesson`
+            );
 
-            console.log("GET LESSONS RESPONSE:", response.data);
             return response.data;
         } catch (error) {
-            console.log(
+            console.error(
                 "GET LESSONS ERROR:",
                 error.response?.data || error
             );
+
             throw error;
         }
     },
 
-    // Get lessons belonging to a specific course
-    getLessonsByCourse: async (courseId) => {
+    // Get lessons belonging to a specific topic
+    getLessonsByTopic: async (topicId) => {
         try {
+            if (!topicId) {
+                throw new Error("Topic ID is required.");
+            }
+
             const response = await axios.get(
-                `${API_URL}/courses/${courseId}/lessons`
+                `${API_URL}/get-lesson/${encodeURIComponent(topicId)}`
             );
 
-            
             return response.data;
         } catch (error) {
-            console.log(
-                "GET LESSONS BY COURSE ERROR:",
+            console.error(
+                "GET LESSONS BY TOPIC ERROR:",
                 error.response?.data || error
             );
+
             throw error;
         }
     },
 
-    // Update a lesson
+    // Update an existing lesson
     updateLesson: async (lessonId, lessonData) => {
         try {
+            if (!lessonId) {
+                throw new Error("Lesson ID is required.");
+            }
+
             const response = await axios.patch(
-                `${API_URL}/update-lesson/${lessonId}`,
+                `${API_URL}/update-lesson/${encodeURIComponent(lessonId)}`,
                 lessonData
             );
 
-            
             return response.data;
         } catch (error) {
-            console.log(
+            console.error(
                 "UPDATE LESSON ERROR:",
                 error.response?.data || error
             );
+
             throw error;
         }
     },
@@ -82,20 +92,24 @@ const useLessonStore = create(() => ({
     // Delete a lesson
     deleteLesson: async (lessonId) => {
         try {
+            if (!lessonId) {
+                throw new Error("Lesson ID is required.");
+            }
+
             const response = await axios.delete(
-                `${API_URL}/delete-lesson/${lessonId}`
+                `${API_URL}/delete-lesson/${encodeURIComponent(lessonId)}`
             );
 
-            
             return response.data;
         } catch (error) {
-            console.log(
+            console.error(
                 "DELETE LESSON ERROR:",
                 error.response?.data || error
             );
+
             throw error;
         }
-    }
+    },
 }));
 
 export default useLessonStore;

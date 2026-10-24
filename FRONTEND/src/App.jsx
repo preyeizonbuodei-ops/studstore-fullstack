@@ -34,6 +34,9 @@ import CreateLessonForm from "./DashBoards/AdminDashboard/AdminPageForms/CreateL
 import CreateTopicForm from "./DashBoards/AdminDashboard/AdminPageForms/CreateTopic";
 import CreateDepartment from "./DashBoards/AdminDashboard/AdminPageForms/CreateDepartment";
 import AdminSettings from "./DashBoards/AdminDashboard/AdminPages/AdminSettings";
+import AdminEditCourse from "./DashBoards/AdminDashboard/AdminPageForms/AdminEditCourseForm";
+import AdminEditTopic from "./DashBoards/AdminDashboard/AdminPageForms/AdminEditTopic";
+import AdminEditLesson from "./DashBoards/AdminDashboard/AdminPageForms/AdminEditLesson";
 
 // USER
 import UserLanding from "./DashBoards/UserDashboard/UserPages/UserLanding";
@@ -258,6 +261,21 @@ function App() {
                     <Route
                         path="/admin/create-course"
                         element={<CreateCourse />}
+                    />
+
+                    <Route
+                        path="/admin/edit-course"
+                        element={<AdminEditCourse />}
+                    />
+
+                    <Route
+                        path="/admin/edit-lesson"
+                        element={<AdminEditLesson />}
+                    />
+
+                    <Route
+                        path="/admin/edit-topic"
+                        element={<AdminEditTopic />}
                     />
 
                     <Route

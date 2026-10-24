@@ -8,9 +8,11 @@ const { GetCourses, GetCourseById } = require("../authControllers/CoursesUser/Ge
 const { GetCurrentUser } = require("../authControllers/GetCurrentUser");
 const { Getlesson } = require("../authControllers/CoursesUser/GetLesson");
 const { checkAuth } = require("../authControllers/CheckAuth");
-const { authorizedUserRoles,} = require("../middlewares/RoleControl");
-const { GetTopics } = require("../authControllers/Admin/TopicController");  
-const { GetTopicById } = require("../authControllers/CoursesUser/TopicContent");
+const { authorizedUserRoles} = require("../middlewares/RoleControl");
+const {
+  GetTopicsByCourse,
+  GetTopicById,
+} = require("../authControllers/CoursesUser/TopicContent");
 const { SaveMaterial, GetSavedMaterials, DeleteSavedMaterial } = require("../authControllers/CoursesUser/SaveMaterialController");
 const { getDepartments, getDepartmentById } = require("../authControllers/Admin/DepartmentController/DepartmentController");
 const { getMajorAreas, getMajorAreaById } = require("../authControllers/Admin/DepartmentController/MajorAreaController");
@@ -43,8 +45,19 @@ router.get( "/get-courses", ValidateToken, authorizedUserRoles("Student"), GetCo
 router.get( "/courses/:courseId", ValidateToken, authorizedUserRoles("Student"),  GetCourseById);
 
 router.get( "/courses/:courseId/lesson", ValidateToken, authorizedUserRoles("Student"), Getlesson);
+router.get(
+  "/topics/:topicId/lessons",
+  ValidateToken,
+  authorizedUserRoles("Student"),
+  Getlesson
+);
 
-router.get("/lessons/:lessonId/topics", ValidateToken, authorizedUserRoles("Student"), GetTopics)
+router.get(
+  "/courses/:courseId/topics",
+  ValidateToken,
+  authorizedUserRoles("Student"),
+  GetTopicsByCourse
+);
 
 router.get("/topics/:topicId", ValidateToken, authorizedUserRoles("Student"), GetTopicById)
 router.post("/save-material", ValidateToken, authorizedUserRoles("Student"), SaveMaterial)

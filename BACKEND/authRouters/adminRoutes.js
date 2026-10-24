@@ -4,9 +4,19 @@ const { AdminRegister, adminVerifyVerificationCode, AdminLogOut, AdminLogIn } = 
 const { ValidateAdminToken } = require('../middlewares/ValidateAdminToken');
 const { AdminCheckAuth } = require("../authControllers/Admin/AdminCheckAuth");
 const { authorizedAdminRoles } = require("../middlewares/RoleControl");
-const { CreateLesson, GetCourses,  GetLessons, GetLessonsByCourse, UpdateLesson, DeleteLesson} = require('../authControllers/CoursesUser/LessonController');
-const { CreateCourse, DeleteCourse, UpdateCourse } = require("../authControllers/Admin/CourseController");
-const { CreateTopic, GetTopics, UpdateTopic, DeleteTopic } = require("../authControllers/Admin/TopicController");
+const { CreateLesson,  GetLessons, GetLessonsByTopic, UpdateLesson, DeleteLesson} = require("../authControllers/Admin/LessonController");
+const {
+  CreateCourse,
+  GetCourses,
+  DeleteCourse,
+  UpdateCourse,
+} = require("../authControllers/Admin/CourseController");
+const {
+  CreateTopic,
+  GetTopicByCourse,
+  UpdateTopic,
+  DeleteTopic,
+} = require("../authControllers/CoursesUser/TopicController");
 const { GetAdminRefreshToken } = require("../authControllers/adminRegister");
 const { CreateDepartment, getDepartments, UpdateDepartment, DeleteDepartment } = require("../authControllers/Admin/DepartmentController/DepartmentController");
 const { createMajorArea, getMajorAreas, getMajorAreaById, updateMajorArea, deleteMajorArea } = require("../authControllers/Admin/DepartmentController/MajorAreaController");
@@ -32,14 +42,14 @@ adminRouter.delete('/delete-course/:courseId', ValidateAdminToken, authorizedAdm
 
 adminRouter.post('/create-lesson', ValidateAdminToken, authorizedAdminRoles("Admin"),  CreateLesson )
 adminRouter.get('/get-lesson', ValidateAdminToken, authorizedAdminRoles("Admin"), GetLessons)
-adminRouter.get('/courses/:courseId/lessons', ValidateAdminToken, authorizedAdminRoles("Admin"), GetLessonsByCourse)
+adminRouter.get('/get-lesson/:topicId', ValidateAdminToken, authorizedAdminRoles("Admin"), GetLessonsByTopic)
 adminRouter.patch( "/update-lesson/:lessonId", ValidateAdminToken, authorizedAdminRoles("Admin"), UpdateLesson );
 adminRouter.delete("/delete-lesson/:lessonId", ValidateAdminToken, authorizedAdminRoles("Admin"), DeleteLesson );
 
 
 
-adminRouter.post('/lessons/:lessonId/topics', ValidateAdminToken, authorizedAdminRoles("Admin"), CreateTopic)
-adminRouter.get("/lessons/:lessonId/topics", ValidateAdminToken, authorizedAdminRoles("Admin"), GetTopics)
+adminRouter.post('/course/:courseId/topics', ValidateAdminToken, authorizedAdminRoles("Admin"), CreateTopic)
+adminRouter.get("/course/:courseId/topics", ValidateAdminToken, authorizedAdminRoles("Admin"), GetTopicByCourse)
 adminRouter.patch("/topics/:topicId", ValidateAdminToken, authorizedAdminRoles("Admin"), UpdateTopic);
 adminRouter.delete ("/topics/:topicId", ValidateAdminToken, authorizedAdminRoles("Admin"), DeleteTopic);
 
