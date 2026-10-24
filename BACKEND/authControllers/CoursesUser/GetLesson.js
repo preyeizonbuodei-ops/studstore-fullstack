@@ -61,3 +61,39 @@ exports.Getlesson = async (req, res) => {
     });
   }
 };
+
+// Get one lesson by its ID
+exports.GetLessonById = async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+
+        const lesson = await Lesson.findById(lessonId);
+
+        if (!lesson) {
+            return res.status(404).json({
+                success: false,
+                message: "Lesson not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Lesson retrieved successfully",
+            lesson,
+        });
+    } catch (error) {
+        console.error("GET LESSON BY ID ERROR:", error);
+
+        if (error.name === "CastError") {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid lesson ID",
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+        });
+    }
+};

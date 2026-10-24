@@ -6,7 +6,7 @@ const { CreateComment, GetAllComments, GetOneCommnet, UpdateComment, DeleteComme
 const { ConnectNews } = require("../authControllers/NewsController");
 const { GetCourses, GetCourseById } = require("../authControllers/CoursesUser/GetCourses");
 const { GetCurrentUser } = require("../authControllers/GetCurrentUser");
-const { Getlesson } = require("../authControllers/CoursesUser/GetLesson");
+const { Getlesson, GetLessonById, } = require("../authControllers/CoursesUser/GetLesson");
 const { checkAuth } = require("../authControllers/CheckAuth");
 const { authorizedUserRoles} = require("../middlewares/RoleControl");
 const {
@@ -58,7 +58,12 @@ router.get(
   authorizedUserRoles("Student"),
   GetTopicsByCourse
 );
-
+router.get(
+    "/lessons/:lessonId",
+    ValidateToken,
+    authorizedUserRoles("Student"),
+    GetLessonById
+);
 router.get("/topics/:topicId", ValidateToken, authorizedUserRoles("Student"), GetTopicById)
 router.post("/save-material", ValidateToken, authorizedUserRoles("Student"), SaveMaterial)
 router.get("/saved-material", ValidateToken, authorizedUserRoles("Student"), GetSavedMaterials)

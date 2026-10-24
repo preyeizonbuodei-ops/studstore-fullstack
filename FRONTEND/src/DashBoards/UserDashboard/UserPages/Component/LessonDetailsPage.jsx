@@ -1,6 +1,6 @@
 
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
     ArrowLeft,
     ArrowRight,
@@ -22,11 +22,11 @@ import {
     Target,
 } from "lucide-react";
 
-import useTopicStore from "../../CourseStore/UserTopicStore";
+import LessonStore from "../../CourseStore/LessonStore";
 import useSavedMaterialStore from "../../CourseStore/SaveMaterialStore";
 
 // --------------------------------------------------
-// HELPER FUNCTIONS
+// HELPERS
 // --------------------------------------------------
 
 function getText(value, fallback = "") {
@@ -58,58 +58,60 @@ function getResourceUrl(resource) {
     );
 }
 
-function getYouTubeEmbedUrl(url) {
-    if (!url) return "";
+function getParentTopicId(lesson) {
+    const topicId = lesson?.TopicId ?? lesson?.topicId;
+
+    return String(topicId?._id || topicId || "");
+}
+
+function getYouTubeEmbedUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== "string") return "";
 
     try {
-        const parsedUrl = new URL(url);
-        const hostname = parsedUrl.hostname.replace(/^www\./, "");
-
-        if (hostname === "youtu.be") {
-            const videoId = parsedUrl.pathname.slice(1);
-
-            return videoId
-                ? `https://www.youtube.com/embed/${videoId}`
-                : "";
-        }
+        const url = new URL(rawUrl);
+        const hostname = url.hostname.toLowerCase();
+        let videoId = "";
 
         if (
-            hostname === "youtube.com" ||
-            hostname === "m.youtube.com" ||
-            hostname === "youtube-nocookie.com"
+            hostname === "youtu.be" ||
+            hostname === "www.youtu.be"
         ) {
-            if (parsedUrl.pathname === "/watch") {
-                const videoId = parsedUrl.searchParams.get("v");
-
-                return videoId
-                    ? `https://www.youtube.com/embed/${videoId}`
-                    : "";
-            }
-
-            if (parsedUrl.pathname.startsWith("/embed/")) {
-                return url;
-            }
-
-            if (parsedUrl.pathname.startsWith("/shorts/")) {
-                const videoId = parsedUrl.pathname.split("/")[2];
-
-                return videoId
-                    ? `https://www.youtube.com/embed/${videoId}`
-                    : "";
+            videoId = url.pathname.split("/").filter(Boolean)[0] || "";
+        } else if (
+            [
+                "youtube.com",
+                "www.youtube.com",
+                "m.youtube.com",
+                "youtube-nocookie.com",
+                "www.youtube-nocookie.com",
+            ].includes(hostname)
+        ) {
+            if (url.pathname === "/watch") {
+                videoId = url.searchParams.get("v") || "";
+            } else if (
+                url.pathname.startsWith("/embed/") ||
+                url.pathname.startsWith("/shorts/") ||
+                url.pathname.startsWith("/live/")
+            ) {
+                videoId =
+                    url.pathname.split("/").filter(Boolean)[1] || "";
             }
         }
 
-        return "";
+        if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) return "";
+
+        return `https://www.youtube-nocookie.com/embed/${videoId}`;
     } catch {
         return "";
     }
 }
 
-// Normalize topicId because a saved material may contain
-// either the topic ID string or a populated topic object.
+function isDirectVideoUrl(url) {
+    return /\.(mp4|webm|ogg|m4v)(\?.*)?(#.*)?$/i.test(url || "");
+}
+
 function getSavedTopicId(material) {
     const topicId = material?.topicId;
-
     return String(topicId?._id || topicId || "");
 }
 
@@ -131,9 +133,8 @@ function ResourceCard({
     );
 
     const url = getResourceUrl(resource);
-
-    const embedUrl =
-        type === "video" ? getYouTubeEmbedUrl(url) : "";
+    const embedUrl = type === "video" ? getYouTubeEmbedUrl(url) : "";
+    const directVideo = type === "video" && isDirectVideoUrl(url);
 
     return (
         <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
@@ -148,6 +149,17 @@ function ResourceCard({
                         loading="lazy"
                     />
                 </div>
+            )}
+
+            {directVideo && url && (
+                <video
+                    controls
+                    preload="metadata"
+                    className="aspect-video w-full bg-slate-950"
+                    src={url}
+                >
+                    Your browser does not support video playback.
+                </video>
             )}
 
             <div className="p-5">
@@ -170,17 +182,11 @@ function ResourceCard({
                         <h3 className="mt-1 break-words font-semibold text-slate-900">
                             {title}
                         </h3>
-
-                        {url && (
-                            <p className="mt-2 break-all text-xs text-slate-500">
-                                {url}
-                            </p>
-                        )}
                     </div>
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {url && (
+                    {url && !embedUrl && !directVideo && (
                         <a
                             href={url}
                             target="_blank"
@@ -204,13 +210,6 @@ function ResourceCard({
                             type="button"
                             disabled={isSaving || isSaved}
                             onClick={() => onSave?.(resource)}
-                            aria-label={
-                                isSaved
-                                    ? `${title} saved`
-                                    : isSaving
-                                      ? `Saving ${title}`
-                                      : `Save ${title}`
-                            }
                             className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
                                 isSaved
                                     ? "cursor-default border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -260,7 +259,7 @@ function ContentBlock({ content }) {
     if (!text.trim()) {
         return (
             <div className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
-                No teaching content has been added to this topic yet.
+                No teaching content has been added to this lesson yet.
             </div>
         );
     }
@@ -273,7 +272,7 @@ function ContentBlock({ content }) {
 }
 
 // --------------------------------------------------
-// EXAMPLE CARD
+// WORKED EXAMPLE
 // --------------------------------------------------
 
 function ExampleCard({ example, index }) {
@@ -320,7 +319,6 @@ function ExampleCard({ example, index }) {
                     <p className="mb-2 text-sm font-semibold text-slate-800">
                         Question
                     </p>
-
                     <ContentBlock content={question} />
                 </div>
             )}
@@ -330,7 +328,6 @@ function ExampleCard({ example, index }) {
                     <p className="mb-2 text-sm font-semibold text-slate-800">
                         Solution
                     </p>
-
                     <ContentBlock content={solution} />
                 </div>
             )}
@@ -339,17 +336,17 @@ function ExampleCard({ example, index }) {
 }
 
 // --------------------------------------------------
-// MAIN TOPIC DETAILS PAGE
+// LESSON DETAILS PAGE
 // --------------------------------------------------
 
-export default function TopicDetails() {
-    const { topicId } = useParams();
+export default function LessonDetails() {
+    const { lessonId } = useParams();
+    const navigate = useNavigate();
 
-    const getTopicById = useTopicStore(
-        (state) => state.getTopicById
+    const getLessonById = LessonStore(
+        (state) => state.getLessonById
     );
 
-    // Saved-material store actions and state
     const saveMaterial = useSavedMaterialStore(
         (state) => state.saveMaterial
     );
@@ -366,51 +363,62 @@ export default function TopicDetails() {
         (state) => state.savingMaterialUrl
     );
 
-    const [topic, setTopic] = useState(null);
+    const [lesson, setLesson] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState("content");
     const [saveNotice, setSaveNotice] = useState("");
     const [saveNoticeType, setSaveNoticeType] = useState("success");
 
-    // --------------------------------------------------
-    // FETCH TOPIC
-    // --------------------------------------------------
-
+    // Fetch the selected lesson by lessonId.
     useEffect(() => {
         let cancelled = false;
 
-        async function fetchTopic() {
+        async function fetchLesson() {
+            if (!lessonId) {
+                setError("Lesson ID is missing.");
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             setError("");
-            setTopic(null);
+            setLesson(null);
             setSaveNotice("");
 
             try {
-                const response = await getTopicById(topicId);
-
-                const fetchedTopic =
-                    response?.topic ||
-                    response?.data?.topic;
-
-                if (!fetchedTopic) {
+                if (typeof getLessonById !== "function") {
                     throw new Error(
-                        response?.message ||
-                        "The topic could not be found."
+                        "LessonStore is missing getLessonById."
                     );
                 }
 
+                const response = await getLessonById(lessonId);
+
+                const fetchedLesson =
+                    response?.lesson ??
+                    response?.data?.lesson ??
+                    response?.data?.data?.lesson ??
+                    null;
+
+                if (!fetchedLesson) {
+                    throw new Error("The lesson could not be found.");
+                }
+
                 if (!cancelled) {
-                    setTopic(fetchedTopic);
+                    setLesson(fetchedLesson);
                 }
             } catch (err) {
-                console.error("FAILED TO LOAD TOPIC:", err);
+                console.error(
+                    "FAILED TO LOAD LESSON:",
+                    err.response?.data || err
+                );
 
                 if (!cancelled) {
                     setError(
                         err?.response?.data?.message ||
                         err?.message ||
-                        "Couldn't load this topic. Please try again."
+                        "Unable to load this lesson. Please try again."
                     );
                 }
             } finally {
@@ -420,46 +428,36 @@ export default function TopicDetails() {
             }
         }
 
-        if (topicId) {
-            fetchTopic();
-        } else {
-            setError("Topic ID is missing.");
-            setLoading(false);
-        }
+        fetchLesson();
 
         return () => {
             cancelled = true;
         };
-    }, [topicId, getTopicById]);
+    }, [lessonId, getLessonById]);
 
-    // --------------------------------------------------
-    // FETCH SAVED MATERIALS
-    // This restores the Saved button state after refresh.
-    // --------------------------------------------------
-
+    // Preserve the existing saved-material feature.
     useEffect(() => {
         getSavedMaterials();
     }, [getSavedMaterials]);
 
-    // --------------------------------------------------
-    // SAVE MATERIAL
-    // --------------------------------------------------
+    const parentTopicId = getParentTopicId(lesson);
 
     const handleSaveMaterial = async (material) => {
         const title = getResourceTitle(material, "Study material");
         const url = getResourceUrl(material);
 
-        if (!topicId || !url) {
+        if (!parentTopicId || !url) {
             setSaveNoticeType("error");
-            setSaveNotice("Topic ID or material URL is missing.");
+            setSaveNotice(
+                "The lesson's parent topic or material URL is missing."
+            );
             return;
         }
 
-        // Prevent duplicate saves for the same topic and URL.
         const alreadySaved = savedMaterials.some(
             (saved) =>
                 saved.url === url &&
-                getSavedTopicId(saved) === String(topicId)
+                getSavedTopicId(saved) === parentTopicId
         );
 
         if (alreadySaved) {
@@ -471,23 +469,27 @@ export default function TopicDetails() {
         setSaveNotice("");
 
         try {
+            // The current saved-material API uses topicId.
+            // Keep that contract until its backend is changed.
             const result = await saveMaterial({
-                topicId,
+                topicId: parentTopicId,
                 title,
                 url,
                 resourceType: "material",
             });
 
             if (result?.success) {
-                // Refresh the saved materials from the backend.
                 await getSavedMaterials();
 
                 setSaveNoticeType("success");
-                setSaveNotice(result.message || `${title} saved successfully!`);
+                setSaveNotice(
+                    result.message || `${title} saved successfully!`
+                );
             } else {
                 setSaveNoticeType("error");
                 setSaveNotice(
-                    result?.message || "Failed to save material. Please try again."
+                    result?.message ||
+                    "Failed to save material. Please try again."
                 );
             }
         } catch (err) {
@@ -502,30 +504,19 @@ export default function TopicDetails() {
         }
     };
 
-    // --------------------------------------------------
-    // TOPIC DATA
-    // --------------------------------------------------
-
-    const content =
-        topic?.content ||
-        topic?.teachingContent ||
-        topic?.body ||
-        "";
+    // These now come from the lesson document, not the topic document.
+    const content = lesson?.content || "";
 
     const examples =
-        topic?.workedExamples ||
-        topic?.examples ||
-        topic?.workedExample ||
+        lesson?.examples ||
+        lesson?.workedExamples ||
+        lesson?.workedExample ||
         "";
 
     const videos = useMemo(() => {
-        const value =
-            topic?.videos ||
-            topic?.videoResources ||
-            [];
-
+        const value = lesson?.videos || lesson?.videoResources || [];
         return Array.isArray(value) ? value : [value];
-    }, [topic]);
+    }, [lesson]);
 
     const materials = useMemo(() => {
         const normalize = (value) => {
@@ -534,34 +525,18 @@ export default function TopicDetails() {
         };
 
         return [
-            ...normalize(topic?.materials),
-            ...normalize(topic?.studyMaterials),
-            ...normalize(topic?.externalMaterials),
-            ...normalize(topic?.resources),
+            ...normalize(lesson?.materials),
+            ...normalize(lesson?.studyMaterials),
+            ...normalize(lesson?.externalMaterials),
+            ...normalize(lesson?.resources),
         ];
-    }, [topic]);
+    }, [lesson]);
 
     const tabs = [
-        {
-            id: "content",
-            label: "Teaching Content",
-            icon: BookOpen,
-        },
-        {
-            id: "examples",
-            label: "Worked Examples",
-            icon: BookText,
-        },
-        {
-            id: "videos",
-            label: "Videos",
-            icon: Video,
-        },
-        {
-            id: "materials",
-            label: "Study Materials",
-            icon: FileText,
-        },
+        { id: "content", label: "Lesson Notes", icon: BookOpen },
+        { id: "examples", label: "Worked Examples", icon: BookText },
+        { id: "videos", label: "Videos", icon: Video },
+        { id: "materials", label: "Study Materials", icon: FileText },
     ];
 
     const exampleCount = Array.isArray(examples)
@@ -577,10 +552,6 @@ export default function TopicDetails() {
         materials: materials.filter(Boolean).length,
     };
 
-    // --------------------------------------------------
-    // LOADING STATE
-    // --------------------------------------------------
-
     if (loading) {
         return (
             <div className="flex min-h-[60vh] items-center justify-center">
@@ -589,18 +560,13 @@ export default function TopicDetails() {
                         size={38}
                         className="mx-auto animate-spin text-blue-700"
                     />
-
                     <p className="mt-4 text-sm font-medium text-slate-600">
-                        Loading topic content...
+                        Loading lesson content...
                     </p>
                 </div>
             </div>
         );
     }
-
-    // --------------------------------------------------
-    // ERROR STATE
-    // --------------------------------------------------
 
     if (error) {
         return (
@@ -611,12 +577,10 @@ export default function TopicDetails() {
                             size={24}
                             className="shrink-0 text-red-600"
                         />
-
                         <div>
                             <h2 className="font-bold text-red-900">
-                                Unable to load topic
+                                Unable to load lesson
                             </h2>
-
                             <p className="mt-2 text-sm text-red-800">
                                 {error}
                             </p>
@@ -633,39 +597,44 @@ export default function TopicDetails() {
                             Try Again
                         </button>
 
-                        <Link
-                            to="/"
-                            className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-800 hover:bg-red-100"
-                        >
-                            <ArrowLeft size={16} />
-                            Go Back
-                        </Link>
+                        {parentTopicId && (
+                            <Link
+                                to={`/topics/${parentTopicId}/lessons`}
+                                className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-800 hover:bg-red-100"
+                            >
+                                <ArrowLeft size={16} />
+                                Back to Lessons
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>
         );
     }
 
-    // --------------------------------------------------
-    // TOPIC PAGE
-    // --------------------------------------------------
-
     return (
         <div className="min-h-screen bg-slate-50">
             <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                <Link
-                    to={-1}
-                    onClick={(event) => {
-                        event.preventDefault();
-                        window.history.back();
-                    }}
-                    className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-blue-700"
-                >
-                    <ArrowLeft size={17} />
-                    Back to Topics
-                </Link>
+                {parentTopicId ? (
+                    <Link
+                        to={`/topics/${parentTopicId}/lessons`}
+                        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-blue-700"
+                    >
+                        <ArrowLeft size={17} />
+                        Back to Topic Lessons
+                    </Link>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => navigate(-1)}
+                        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-700"
+                    >
+                        <ArrowLeft size={17} />
+                        Back
+                    </button>
+                )}
 
-                {/* Topic header */}
+                {/* Lesson header */}
                 <header className="mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-6 text-white shadow-lg sm:p-9">
                     <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
@@ -673,38 +642,36 @@ export default function TopicDetails() {
                                 size={14}
                                 className="mr-1 inline"
                             />
-                            Learning Topic
+                            Learning Lesson
                         </span>
 
-                        {topic?.topicNumber != null && (
-                            <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
-                                Topic {topic.topicNumber}
-                            </span>
-                        )}
+                        <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+                            Lesson{" "}
+                            {lesson?.LessonNumber ??
+                                lesson?.lessonNumber ??
+                                "—"}
+                        </span>
                     </div>
 
-                    <h1 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
-                        {topic?.title || "Untitled Topic"}
+                    <h1 className="mt-5 break-words text-3xl font-bold tracking-tight sm:text-4xl">
+                        {lesson?.title || "Untitled Lesson"}
                     </h1>
 
                     <p className="mt-3 max-w-3xl text-sm leading-7 text-blue-100 sm:text-base">
-                        Study the teaching content, review worked
-                        examples, watch videos, and explore
-                        recommended study materials.
+                        Read the lesson notes, review worked examples,
+                        watch videos, and explore recommended study materials.
                     </p>
 
                     <div className="mt-6 flex flex-wrap gap-4 text-sm text-blue-100">
                         <span className="inline-flex items-center gap-2">
                             <BookOpen size={17} />
-                            Teaching content
+                            Lesson notes
                         </span>
-
                         <span className="inline-flex items-center gap-2">
                             <Lightbulb size={17} />
                             {exampleCount} example section
                             {exampleCount === 1 ? "" : "s"}
                         </span>
-
                         <span className="inline-flex items-center gap-2">
                             <Clock3 size={17} />
                             Learn at your own pace
@@ -719,8 +686,7 @@ export default function TopicDetails() {
                             <div className="flex min-w-max gap-2">
                                 {tabs.map((tab) => {
                                     const Icon = tab.icon;
-                                    const isActive =
-                                        activeTab === tab.id;
+                                    const isActive = activeTab === tab.id;
 
                                     return (
                                         <button
@@ -738,7 +704,6 @@ export default function TopicDetails() {
                                         >
                                             <Icon size={17} />
                                             {tab.label}
-
                                             <span
                                                 className={`rounded-full px-2 py-0.5 text-xs ${
                                                     isActive
@@ -754,21 +719,19 @@ export default function TopicDetails() {
                             </div>
                         </div>
 
-                        {/* Teaching content */}
+                        {/* Notes */}
                         {activeTab === "content" && (
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
                                 <div className="mb-6 flex items-center gap-3 border-b border-slate-100 pb-5">
                                     <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
                                         <BookOpen size={22} />
                                     </div>
-
                                     <div>
                                         <h2 className="text-xl font-bold text-slate-900">
-                                            Teaching Content
+                                            Lesson Notes
                                         </h2>
-
                                         <p className="mt-1 text-sm text-slate-500">
-                                            Learn the concepts for this topic.
+                                            Learn the concepts in this lesson.
                                         </p>
                                     </div>
                                 </div>
@@ -778,10 +741,8 @@ export default function TopicDetails() {
                                 <div className="mt-8 flex justify-end">
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            setActiveTab("examples")
-                                        }
-                                        className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+                                        onClick={() => setActiveTab("examples")}
+                                        className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
                                     >
                                         Review Examples
                                         <ArrowRight size={17} />
@@ -790,63 +751,42 @@ export default function TopicDetails() {
                             </section>
                         )}
 
-                        {/* Worked examples */}
+                        {/* Examples */}
                         {activeTab === "examples" && (
-                            <section className="space-y-5">
-                                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                                    <div className="mb-5 flex items-center gap-3">
-                                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
-                                            <Target size={22} />
-                                        </div>
-
-                                        <div>
-                                            <h2 className="text-xl font-bold text-slate-900">
-                                                Worked Examples
-                                            </h2>
-
-                                            <p className="mt-1 text-sm text-slate-500">
-                                                Follow the explanations and solutions.
-                                            </p>
-                                        </div>
+                            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                                <div className="mb-5 flex items-center gap-3">
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                                        <Target size={22} />
                                     </div>
-
-                                    {typeof examples === "string" &&
-                                    examples.trim() ? (
-                                        <ContentBlock content={examples} />
-                                    ) : Array.isArray(examples) &&
-                                      examples.length > 0 ? (
-                                        <div className="space-y-5">
-                                            {examples.map(
-                                                (example, index) => (
-                                                    <ExampleCard
-                                                        key={
-                                                            example?._id ||
-                                                            index
-                                                        }
-                                                        example={example}
-                                                        index={index}
-                                                    />
-                                                )
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
-                                            <BookText
-                                                size={30}
-                                                className="mx-auto text-slate-400"
-                                            />
-
-                                            <h3 className="mt-3 font-semibold text-slate-800">
-                                                No worked examples yet
-                                            </h3>
-
-                                            <p className="mt-2 text-sm text-slate-500">
-                                                Examples for this topic will
-                                                appear here when added.
-                                            </p>
-                                        </div>
-                                    )}
+                                    <div>
+                                        <h2 className="text-xl font-bold text-slate-900">
+                                            Worked Examples
+                                        </h2>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            Review the explanations and solutions.
+                                        </p>
+                                    </div>
                                 </div>
+
+                                {typeof examples === "string" &&
+                                examples.trim() ? (
+                                    <ContentBlock content={examples} />
+                                ) : Array.isArray(examples) &&
+                                  examples.length > 0 ? (
+                                    <div className="space-y-5">
+                                        {examples.map((example, index) => (
+                                            <ExampleCard
+                                                key={example?._id || index}
+                                                example={example}
+                                                index={index}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+                                        No worked examples have been added to this lesson yet.
+                                    </p>
+                                )}
                             </section>
                         )}
 
@@ -857,12 +797,10 @@ export default function TopicDetails() {
                                     <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-red-600">
                                         <PlayCircle size={22} />
                                     </div>
-
                                     <div>
                                         <h2 className="text-xl font-bold text-slate-900">
                                             Video Lessons
                                         </h2>
-
                                         <p className="mt-1 text-sm text-slate-500">
                                             Reinforce your understanding with videos.
                                         </p>
@@ -873,10 +811,7 @@ export default function TopicDetails() {
                                     <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
                                         {videos.map((video, index) => (
                                             <ResourceCard
-                                                key={
-                                                    video?._id ||
-                                                    `${getResourceUrl(video)}-${index}`
-                                                }
+                                                key={`${getResourceUrl(video)}-${index}`}
                                                 resource={video}
                                                 index={index}
                                                 type="video"
@@ -884,41 +819,26 @@ export default function TopicDetails() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
-                                        <Video
-                                            size={30}
-                                            className="mx-auto text-slate-400"
-                                        />
-
-                                        <h3 className="mt-3 font-semibold text-slate-800">
-                                            No videos available
-                                        </h3>
-
-                                        <p className="mt-2 text-sm text-slate-500">
-                                            Videos added to this topic will
-                                            appear here.
-                                        </p>
-                                    </div>
+                                    <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+                                        No videos have been added to this lesson yet.
+                                    </p>
                                 )}
                             </section>
                         )}
 
-                        {/* Study materials */}
+                        {/* Materials */}
                         {activeTab === "materials" && (
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
                                 <div className="mb-6 flex items-center gap-3">
                                     <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
                                         <Layers3 size={22} />
                                     </div>
-
                                     <div>
                                         <h2 className="text-xl font-bold text-slate-900">
                                             Study Materials
                                         </h2>
-
                                         <p className="mt-1 text-sm text-slate-500">
-                                            Open reference materials and save
-                                            resources for later.
+                                            Open materials and save them for later.
                                         </p>
                                     </div>
                                 </div>
@@ -945,7 +865,6 @@ export default function TopicDetails() {
                                                     className="mt-0.5 shrink-0"
                                                 />
                                             )}
-
                                             <p>{saveNotice}</p>
                                         </div>
                                     </div>
@@ -953,108 +872,70 @@ export default function TopicDetails() {
 
                                 {materials.length > 0 ? (
                                     <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-                                        {materials.map(
-                                            (material, index) => {
-                                                const materialUrl =
-                                                    getResourceUrl(material);
+                                        {materials.map((material, index) => {
+                                            const url = getResourceUrl(material);
 
-                                                const isSaving = Boolean(
-                                                    materialUrl &&
-                                                    savingMaterialUrl ===
-                                                        materialUrl
-                                                );
+                                            const isSaving = Boolean(
+                                                url && savingMaterialUrl === url
+                                            );
 
-                                                const isSaved =
-                                                    savedMaterials.some(
-                                                        (saved) =>
-                                                            saved.url ===
-                                                                materialUrl &&
-                                                            getSavedTopicId(
-                                                                saved
-                                                            ) ===
-                                                                String(topicId)
-                                                    );
+                                            const isSaved = savedMaterials.some(
+                                                (saved) =>
+                                                    saved.url === url &&
+                                                    getSavedTopicId(saved) ===
+                                                        parentTopicId
+                                            );
 
-                                                return (
-                                                    <ResourceCard
-                                                        key={
-                                                            material?._id ||
-                                                            `${materialUrl}-${index}`
-                                                        }
-                                                        resource={material}
-                                                        index={index}
-                                                        type="material"
-                                                        onSave={
-                                                            handleSaveMaterial
-                                                        }
-                                                        isSaving={isSaving}
-                                                        isSaved={isSaved}
-                                                    />
-                                                );
-                                            }
-                                        )}
+                                            return (
+                                                <ResourceCard
+                                                    key={`${url}-${index}`}
+                                                    resource={material}
+                                                    index={index}
+                                                    type="material"
+                                                    onSave={handleSaveMaterial}
+                                                    isSaving={isSaving}
+                                                    isSaved={isSaved}
+                                                />
+                                            );
+                                        })}
                                     </div>
                                 ) : (
-                                    <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
-                                        <FileText
-                                            size={30}
-                                            className="mx-auto text-slate-400"
-                                        />
-
-                                        <h3 className="mt-3 font-semibold text-slate-800">
-                                            No study materials available
-                                        </h3>
-
-                                        <p className="mt-2 text-sm text-slate-500">
-                                            Study materials and external links
-                                            added to this topic will appear here.
-                                        </p>
-                                    </div>
+                                    <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+                                        No study materials have been added to this lesson yet.
+                                    </p>
                                 )}
                             </section>
                         )}
                     </main>
 
-                    {/* Right sidebar */}
+                    {/* Sidebar */}
                     <aside className="space-y-5">
                         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                             <h2 className="font-bold text-slate-900">
-                                Topic Overview
+                                Lesson Overview
                             </h2>
 
-                            <p className="mt-1 text-sm text-slate-500">
-                                Your learning resources
+                            <p className="mt-1 break-words text-sm text-slate-500">
+                                {lesson?.title || "Selected lesson"}
                             </p>
 
                             <div className="mt-5 space-y-4">
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="flex items-center gap-2 text-sm text-slate-600">
-                                        <BookOpen
-                                            size={17}
-                                            className="text-blue-700"
-                                        />
-                                        Teaching content
+                                        <BookOpen size={17} className="text-blue-700" />
+                                        Lesson notes
                                     </span>
-
                                     <CheckCircle2
                                         size={18}
-                                        className={
-                                            content
-                                                ? "text-emerald-600"
-                                                : "text-slate-300"
-                                        }
+                                        className={content ? "text-emerald-600" : "text-slate-300"}
                                     />
                                 </div>
 
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="flex items-center gap-2 text-sm text-slate-600">
-                                        <Lightbulb
-                                            size={17}
-                                            className="text-amber-600"
-                                        />
+                                        <Lightbulb size={17} className="text-amber-600" />
                                         Worked examples
                                     </span>
-
                                     <span className="text-sm font-semibold text-slate-700">
                                         {exampleCount}
                                     </span>
@@ -1062,13 +943,9 @@ export default function TopicDetails() {
 
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="flex items-center gap-2 text-sm text-slate-600">
-                                        <Video
-                                            size={17}
-                                            className="text-red-600"
-                                        />
+                                        <Video size={17} className="text-red-600" />
                                         Videos
                                     </span>
-
                                     <span className="text-sm font-semibold text-slate-700">
                                         {videos.length}
                                     </span>
@@ -1076,13 +953,9 @@ export default function TopicDetails() {
 
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="flex items-center gap-2 text-sm text-slate-600">
-                                        <FileText
-                                            size={17}
-                                            className="text-emerald-600"
-                                        />
+                                        <FileText size={17} className="text-emerald-600" />
                                         Materials
                                     </span>
-
                                     <span className="text-sm font-semibold text-slate-700">
                                         {materials.length}
                                     </span>
@@ -1090,7 +963,6 @@ export default function TopicDetails() {
                             </div>
                         </section>
 
-                        {/* Quick navigation */}
                         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                             <h2 className="font-bold text-slate-900">
                                 Quick Navigation
@@ -1118,7 +990,6 @@ export default function TopicDetails() {
                                                 <Icon size={17} />
                                                 {tab.label}
                                             </span>
-
                                             <ArrowRight size={15} />
                                         </button>
                                     );
@@ -1126,20 +997,15 @@ export default function TopicDetails() {
                             </div>
                         </section>
 
-                        {/* Learning tip */}
                         <section className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
                             <div className="flex items-center gap-2 text-blue-800">
                                 <Lightbulb size={19} />
-
-                                <h2 className="font-bold">
-                                    Study Tip
-                                </h2>
+                                <h2 className="font-bold">Study Tip</h2>
                             </div>
-
                             <p className="mt-3 text-sm leading-6 text-blue-900">
-                                Read the teaching content first, work through
-                                the examples, then use the videos and external
-                                materials to strengthen your understanding.
+                                Read the lesson notes first, work through the
+                                examples, then use the videos and study materials
+                                to strengthen your understanding.
                             </p>
                         </section>
                     </aside>

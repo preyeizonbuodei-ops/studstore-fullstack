@@ -42,9 +42,11 @@ import AdminEditLesson from "./DashBoards/AdminDashboard/AdminPageForms/AdminEdi
 import UserLanding from "./DashBoards/UserDashboard/UserPages/UserLanding";
 import UserDashBoard from "./DashBoards/UserDashboard/UserPages/UserDashBoard";
 import Courses from "./DashBoards/UserDashboard/UserPages/Courses";
-import Lessons from "./DashBoards/UserDashboard/UserPages/Component/LessonPage";
-import TopicsPage from "./DashBoards/UserDashboard/UserPages/Component/TopicPage";
-import TopicDetails from "./DashBoards/UserDashboard/UserPages/Component/TopicIdPage";
+// USER COURSE CONTENT
+import TopicPage from "./DashBoards/UserDashboard/UserPages/Component/TopicsPage";
+import TopicLessonsPage from "./DashBoards/UserDashboard/UserPages/Component/TopicsLessonsPage";
+import LessonDetailsPage from "./DashBoards/UserDashboard/UserPages/Component/LessonDetailsPage";
+
 import Materials from "./DashBoards/UserDashboard/UserPages/Component/ResourcesPage";
 import Profile from "./DashBoards/UserDashboard/UserPages/Component/Profile";
 import Settings from "./DashBoards/UserDashboard/UserPages/Component/Settings";
@@ -353,22 +355,33 @@ function App() {
                             element={<Courses />}
                         />
 
-                        {/* Course Lessons */}
+                        {/* Course → Topic → Lesson */}
 
-                        <Route
-                            path="/courses/:courseId/lesson"
-                            element={<Lessons />}
-                        />
+                        {/* COURSE → TOPICS */}
 
-                        <Route
-                            path="/lessons/:lessonId/topics"
-                            element={<TopicsPage />}
-                        />
+                        {/* Course → Topics */}
+                    <Route
+                        path="/courses/:courseId/topics"
+                        element={<TopicPage />}
+                    />
 
-                        <Route
-                            path="/topics/:topicId"
-                            element={<TopicDetails />}
-                        />
+                    {/* Backward compatibility for existing course links */}
+                    <Route
+                        path="/courses/:courseId/lesson"
+                        element={<TopicPage />}
+                    />
+
+                    {/* Topic → Lessons */}
+                    <Route
+                        path="/topics/:topicId/lessons"
+                        element={<TopicLessonsPage />}
+                    />
+
+                    {/* Lesson → Notes, videos and materials */}
+                    <Route
+                        path="/lessons/:lessonId"
+                        element={<LessonDetailsPage />}
+                    />
 
                         <Route
                             path="/me/learning-materials"
