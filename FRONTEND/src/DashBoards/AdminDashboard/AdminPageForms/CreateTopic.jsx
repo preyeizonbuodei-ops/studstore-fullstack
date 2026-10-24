@@ -1,220 +1,171 @@
 
 import { useEffect, useState } from "react";
-import useAdminLessonStore from "../../UserDashboard/CourseStore/CreateLessonStore";
+import { Link, useLocation } from "react-router-dom";
+import { ArrowLeft, BookOpen, Layers, LoaderCircle } from "lucide-react";
+
+import createCourseStore from "../../UserDashboard/CourseStore/CourseStore";
 import useTopicStore from "../../UserDashboard/CourseStore/AdminTopicStore";
 
-const emptyResource = () => ({ title: "", url: "" });
+const getCourseId = (course) => course?._id || course?.id || "";
+
+const getListFromResponse = (response) => {
+    const candidates = [
+        response,
+        response?.data,
+        response?.data?.data,
+    ];
+
+    for (const candidate of candidates) {
+        if (Array.isArray(candidate)) return candidate;
+        if (Array.isArray(candidate?.courses)) return candidate.courses;
+    }
+
+    return [];
+};
 
 const CreateTopicForm = () => {
-    const getLessons = useAdminLessonStore(
-        (state) => state.getLessons
+    const location = useLocation();
+
+    const getCourses = createCourseStore(
+        (state) => state.getCourses
     );
 
     const createTopic = useTopicStore(
         (state) => state.createTopic
     );
 
-    const [lessons, setLessons] = useState([]);
-    const [lessonId, setLessonId] = useState("");
+    const initialCourseId =
+        location.state?.courseId ||
+        getCourseId(location.state?.course) ||
+        "";
 
+    const [courses, setCourses] = useState([]);
+    const [courseId, setCourseId] = useState(initialCourseId);
     const [topicNumber, setTopicNumber] = useState("");
     const [title, setTitle] = useState("");
-    const [content, setContent] = useState("");
-    const [examples, setExamples] = useState("");
 
-    const [videos, setVideos] = useState([emptyResource()]);
-    const [materials, setMaterials] = useState([emptyResource()]);
-    const [resources, setResources] = useState([emptyResource()]);
-
-    const [loadingLessons, setLoadingLessons] = useState(true);
+    const [loadingCourses, setLoadingCourses] = useState(true);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [messageType, setMessageType] = useState("");
 
     useEffect(() => {
-        const fetchLessons = async () => {
-            if (typeof getLessons !== "function") {
-                setMessage(
-                    "The lesson store does not have a getLessons function."
-                );
-                setMessageType("error");
-                setLoadingLessons(false);
-                return;
-            }
+        let cancelled = false;
+
+        const loadCourses = async () => {
+            setLoadingCourses(true);
 
             try {
-                setLoadingLessons(true);
-                setMessage("");
+                const response = await getCourses();
 
-                const response = await getLessons();
+                if (cancelled) return;
 
-                const lessonsData = Array.isArray(response)
-                    ? response
-                    : Array.isArray(response?.lessons)
-                    ? response.lessons
-                    : Array.isArray(response?.data?.lessons)
-                    ? response.data.lessons
-                    : [];
+                const courseList = getListFromResponse(response);
+                setCourses(courseList);
 
-                setLessons(lessonsData);
+                setCourseId((currentId) => {
+                    if (
+                        currentId &&
+                        courseList.some(
+                            (course) =>
+                                String(getCourseId(course)) ===
+                                String(currentId)
+                        )
+                    ) {
+                        return currentId;
+                    }
+
+                    return getCourseId(courseList[0]) || "";
+                });
             } catch (error) {
-                console.error(
-                    "FAILED TO FETCH LESSONS:",
-                    error.response?.data || error
-                );
+                if (!cancelled) {
+                    console.error(
+                        "LOAD COURSES FOR TOPIC FORM ERROR:",
+                        error?.response?.data || error
+                    );
 
-                setMessage(
-                    error.response?.data?.message ||
-                    "Failed to load lessons. Check your admin login and backend route."
-                );
-                setMessageType("error");
+                    setMessage(
+                        error?.response?.data?.message ||
+                            "Unable to load courses. Check your admin login and backend."
+                    );
+                    setMessageType("error");
+                }
             } finally {
-                setLoadingLessons(false);
+                if (!cancelled) {
+                    setLoadingCourses(false);
+                }
             }
         };
 
-        fetchLessons();
-    }, [getLessons]);
+        loadCourses();
 
-    // Update one field in a particular resource row.
-    const updateResource = (
-        setter,
-        index,
-        field,
-        value
-    ) => {
-        setter((previous) =>
-            previous.map((item, itemIndex) =>
-                itemIndex === index
-                    ? { ...item, [field]: value }
-                    : item
-            )
-        );
-    };
+        return () => {
+            cancelled = true;
+        };
+    }, [getCourses]);
 
-    // Add another resource input row.
-    const addResource = (setter) => {
-        setter((previous) => [
-            ...previous,
-            emptyResource()
-        ]);
-    };
+    const handleSubmit = async (event) => {
+        event.preventDefault();
 
-    // Remove a resource input row.
-    const removeResource = (setter, index) => {
-        setter((previous) =>
-            previous.filter((_, itemIndex) => itemIndex !== index)
-        );
-    };
+        setMessage("");
 
-    // Ignore completely empty rows, but don't allow half-filled rows.
-    const prepareResources = (items, label) => {
-        const incomplete = items.some((item) => {
-            const hasTitle = item.title.trim() !== "";
-            const hasUrl = item.url.trim() !== "";
-
-            return hasTitle !== hasUrl;
-        });
-
-        if (incomplete) {
-            throw new Error(
-                `For each ${label}, enter both its title and URL, or leave both fields empty.`
-            );
-        }
-
-        return items
-            .filter(
-                (item) =>
-                    item.title.trim() !== "" &&
-                    item.url.trim() !== ""
-            )
-            .map((item) => ({
-                title: item.title.trim(),
-                url: item.url.trim()
-            }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (!lessonId) {
-            setMessage("Please select a lesson.");
+        if (!courseId) {
+            setMessage("Please select a course.");
             setMessageType("error");
             return;
         }
 
-        if (!topicNumber || Number(topicNumber) < 1) {
-            setMessage("Please enter a valid topic number.");
+        const number = Number(topicNumber);
+
+        if (!Number.isInteger(number) || number < 1) {
+            setMessage("Enter a valid topic number greater than zero.");
             setMessageType("error");
             return;
         }
 
-        if (!title.trim() || !content.trim()) {
-            setMessage(
-                "Please enter the topic title and content."
-            );
+        if (!title.trim()) {
+            setMessage("Please enter a topic title.");
             setMessageType("error");
             return;
         }
 
         if (typeof createTopic !== "function") {
-            setMessage(
-                "The topic store does not have a createTopic function."
-            );
-            setMessageType("error");
-            return;
-        }
-
-        let topicVideos;
-        let topicMaterials;
-        let topicResources;
-
-        try {
-            topicVideos = prepareResources(videos, "video");
-            topicMaterials = prepareResources(materials, "study material");
-            topicResources = prepareResources(resources, "external resource");
-        } catch (error) {
-            setMessage(error.message);
+            setMessage("The topic store is missing createTopic.");
             setMessageType("error");
             return;
         }
 
         setLoading(true);
-        setMessage("");
 
         try {
-            const response = await createTopic(lessonId, {
-                topicNumber: Number(topicNumber),
+            const response = await createTopic(courseId, {
+                TopicNumber: number,
                 title: title.trim(),
-                content: content.trim(),
-                examples: examples.trim(),
-                videos: topicVideos,
-                materials: topicMaterials,
-                resources: topicResources
             });
 
+            if (response?.success === false) {
+                throw new Error(
+                    response.message || "Failed to create topic."
+                );
+            }
+
             setMessage(
-                response?.message || "Topic created successfully!"
+                response?.message || "Topic created successfully."
             );
             setMessageType("success");
 
             setTopicNumber("");
             setTitle("");
-            setContent("");
-            setExamples("");
-
-            setVideos([emptyResource()]);
-            setMaterials([emptyResource()]);
-            setResources([emptyResource()]);
         } catch (error) {
             console.error(
-                "FAILED TO CREATE TOPIC:",
-                error.response?.data || error
+                "CREATE COURSE TOPIC ERROR:",
+                error?.response?.data || error
             );
 
             setMessage(
-                error.response?.data?.message ||
-                "Failed to create topic."
+                error?.response?.data?.message ||
+                    error?.message ||
+                    "Failed to create topic."
             );
             setMessageType("error");
         } finally {
@@ -222,291 +173,203 @@ const CreateTopicForm = () => {
         }
     };
 
-    // Reusable resource section for videos, materials, and links.
-    const renderResourceSection = (
-        heading,
-        description,
-        items,
-        setter,
-        titlePlaceholder,
-        urlPlaceholder
-    ) => (
-        <section className="space-y-4 rounded-xl border border-gray-200 p-4">
-            <div>
-                <h2 className="text-lg font-semibold">
-                    {heading}
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                    {description}
-                </p>
-            </div>
-
-            {items.map((item, index) => (
-                <div
-                    key={index}
-                    className="space-y-3 rounded-lg bg-gray-50 p-3"
-                >
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">
-                            {heading} {index + 1}
-                        </span>
-
-                        {items.length > 1 && (
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    removeResource(setter, index)
-                                }
-                                className="text-sm text-red-600 hover:text-red-800"
-                            >
-                                Remove
-                            </button>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-sm font-medium">
-                            Title
-                        </label>
-                        <input
-                            type="text"
-                            value={item.title}
-                            onChange={(e) =>
-                                updateResource(
-                                    setter,
-                                    index,
-                                    "title",
-                                    e.target.value
-                                )
-                            }
-                            placeholder={titlePlaceholder}
-                            className="w-full rounded-lg border bg-white p-3"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-sm font-medium">
-                            URL
-                        </label>
-                        <input
-                            type="url"
-                            value={item.url}
-                            onChange={(e) =>
-                                updateResource(
-                                    setter,
-                                    index,
-                                    "url",
-                                    e.target.value
-                                )
-                            }
-                            placeholder={urlPlaceholder}
-                            className="w-full rounded-lg border bg-white p-3"
-                        />
-                    </div>
-                </div>
-            ))}
-
-            <button
-                type="button"
-                onClick={() => addResource(setter)}
-                className="rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
-            >
-                + Add another
-            </button>
-        </section>
+    const selectedCourse = courses.find(
+        (course) =>
+            String(getCourseId(course)) === String(courseId)
     );
 
     return (
-        <div className="mx-auto max-w-4xl p-6">
-            <h1 className="mb-2 text-2xl font-bold">
-                Create Lesson
-            </h1>
-
-            <p className="mb-6 text-gray-600">
-                Select a Topic, add the teaching content, and
-                optionally attach learning resources.
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Lesson dropdown */}
-                <div>
-                    <label
-                        htmlFor="lesson"
-                        className="mb-2 block font-medium"
-                    >
-                        Select Topic
-                    </label>
-
-                    <select
-                        id="lesson"
-                        value={lessonId}
-                        onChange={(e) => setLessonId(e.target.value)}
-                        className="w-full rounded-lg border p-3"
-                        required
-                        disabled={loadingLessons}
-                    >
-                        <option value="">
-                            {loadingLessons
-                                ? "Loading lessons..."
-                                : "Choose a lesson"}
-                        </option>
-
-                        {lessons.map((lesson) => (
-                            <option
-                                key={lesson._id}
-                                value={lesson._id}
-                            >
-                                Lesson {lesson.lessonNumber ?? "—"} —{" "}
-                                {lesson.title || "Untitled lesson"}
-                            </option>
-                        ))}
-                    </select>
-
-                    {!loadingLessons && lessons.length === 0 && (
-                        <p className="mt-2 text-sm text-gray-500">
-                            No lessons found. Check that lessons exist
-                            and the lesson-fetching endpoint returns them.
-                        </p>
-                    )}
-                </div>
-
-                {/* Topic number */}
-                <div>
-                    <label
-                        htmlFor="topicNumber"
-                        className="mb-2 block font-medium"
-                    >
-                        Lesson Number
-                    </label>
-
-                    <input
-                        id="topicNumber"
-                        type="number"
-                        min="1"
-                        value={topicNumber}
-                        onChange={(e) => setTopicNumber(e.target.value)}
-                        className="w-full rounded-lg border p-3"
-                        placeholder="e.g. 1"
-                        required
-                    />
-                </div>
-
-                {/* Topic title */}
-                <div>
-                    <label
-                        htmlFor="title"
-                        className="mb-2 block font-medium"
-                    >
-                        Lesson Title
-                    </label>
-
-                    <input
-                        id="title"
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className="w-full rounded-lg border p-3"
-                        placeholder="e.g. Introduction to Motion"
-                        required
-                    />
-                </div>
-
-                {/* Teaching content */}
-                <div>
-                    <label
-                        htmlFor="content"
-                        className="mb-2 block font-medium"
-                    >
-                        Teaching Content
-                    </label>
-
-                    <textarea
-                        id="content"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        className="min-h-40 w-full rounded-lg border p-3"
-                        placeholder="Enter the main teaching content..."
-                        required
-                    />
-                </div>
-
-                {/* Examples */}
-                <div>
-                    <label
-                        htmlFor="examples"
-                        className="mb-2 block font-medium"
-                    >
-                        Worked Examples
-                    </label>
-
-                    <textarea
-                        id="examples"
-                        value={examples}
-                        onChange={(e) => setExamples(e.target.value)}
-                        className="min-h-32 w-full rounded-lg border p-3"
-                        placeholder="Enter examples for this topic..."
-                    />
-                </div>
-
-                {/* Videos */}
-                {renderResourceSection(
-                    "Videos",
-                    "Add YouTube links or other video URLs.",
-                    videos,
-                    setVideos,
-                    "e.g. Understanding Motion",
-                    "https://www.youtube.com/watch?v=..."
-                )}
-
-                {/* Study materials */}
-                {renderResourceSection(
-                    "Study Materials",
-                    "Add links to PDFs, lecture notes, or other study documents.",
-                    materials,
-                    setMaterials,
-                    "e.g. Motion Lecture Notes",
-                    "https://example.com/lecture-notes.pdf"
-                )}
-
-                {/* External resources */}
-                {renderResourceSection(
-                    "External Resources",
-                    "Add educational websites, simulations, and further reading.",
-                    resources,
-                    setResources,
-                    "e.g. Interactive Motion Simulation",
-                    "https://example.com/resource"
-                )}
-
-                {/* Submit */}
-                <button
-                    type="submit"
-                    disabled={
-                        loading ||
-                        loadingLessons ||
-                        lessons.length === 0
-                    }
-                    className="rounded-lg bg-blue-600 px-6 py-3 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl">
+                <Link
+                    to="/admin-dashboard"
+                    className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900"
                 >
-                    {loading ? "Creating..." : "Create Topic"}
-                </button>
+                    <ArrowLeft size={17} />
+                    Back to Course Management
+                </Link>
 
-                {/* Feedback */}
-                {message && (
-                    <p
-                        role="status"
-                        className={`text-sm ${
-                            messageType === "success"
-                                ? "text-green-600"
-                                : "text-red-600"
-                        }`}
+                <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                    <header className="bg-blue-950 p-6 text-white sm:p-8">
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-xl bg-white/10 p-3">
+                                <Layers size={25} />
+                            </div>
+
+                            <div>
+                                <h1 className="text-2xl font-bold">
+                                    Create Topic
+                                </h1>
+                                <p className="mt-1 text-sm text-blue-100">
+                                    Add a topic to a course.
+                                </p>
+                            </div>
+                        </div>
+                    </header>
+
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-6 p-6 sm:p-8"
                     >
-                        {message}
-                    </p>
-                )}
-            </form>
-        </div>
+                        <div>
+                            <label
+                                htmlFor="courseId"
+                                className="mb-2 block text-sm font-semibold text-gray-800"
+                            >
+                                Course
+                            </label>
+
+                            <select
+                                id="courseId"
+                                value={courseId}
+                                onChange={(event) =>
+                                    setCourseId(event.target.value)
+                                }
+                                disabled={loadingCourses || loading}
+                                required
+                                className="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                            >
+                                <option value="">
+                                    {loadingCourses
+                                        ? "Loading courses..."
+                                        : "Select a course"}
+                                </option>
+
+                                {courses.map((course) => (
+                                    <option
+                                        key={getCourseId(course)}
+                                        value={getCourseId(course)}
+                                    >
+                                        {course.courseCode || "Course"} —{" "}
+                                        {course.courseTitle || "Untitled Course"}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {selectedCourse && (
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Topic will belong to{" "}
+                                    <span className="font-semibold">
+                                        {selectedCourse.courseCode} —{" "}
+                                        {selectedCourse.courseTitle}
+                                    </span>
+                                </p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label
+                                htmlFor="topicNumber"
+                                className="mb-2 block text-sm font-semibold text-gray-800"
+                            >
+                                Topic Number
+                            </label>
+
+                            <input
+                                id="topicNumber"
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={topicNumber}
+                                onChange={(event) =>
+                                    setTopicNumber(event.target.value)
+                                }
+                                placeholder="e.g. 1"
+                                required
+                                className="w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                            />
+                        </div>
+
+                        <div>
+                            <label
+                                htmlFor="title"
+                                className="mb-2 block text-sm font-semibold text-gray-800"
+                            >
+                                Topic Title
+                            </label>
+
+                            <input
+                                id="title"
+                                type="text"
+                                value={title}
+                                onChange={(event) =>
+                                    setTitle(event.target.value)
+                                }
+                                placeholder="e.g. Introduction to Chemistry"
+                                required
+                                maxLength={200}
+                                className="w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                            />
+                        </div>
+
+                        <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+                            <div className="flex items-start gap-3">
+                                <BookOpen
+                                    size={20}
+                                    className="mt-0.5 shrink-0 text-blue-700"
+                                />
+
+                                <div>
+                                    <p className="text-sm font-semibold text-blue-950">
+                                        What happens next?
+                                    </p>
+                                    <p className="mt-1 text-sm leading-6 text-blue-800">
+                                        After creating this topic, open it in
+                                        Course Management to add its lessons.
+                                        Teaching notes, examples, videos, and
+                                        study materials belong to individual
+                                        lessons.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {message && (
+                            <div
+                                role="status"
+                                className={`rounded-lg border p-3 text-sm ${
+                                    messageType === "success"
+                                        ? "border-green-200 bg-green-50 text-green-800"
+                                        : "border-red-200 bg-red-50 text-red-800"
+                                }`}
+                            >
+                                {message}
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={
+                                loading ||
+                                loadingCourses ||
+                                courses.length === 0
+                            }
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {loading ? (
+                                <>
+                                    <LoaderCircle
+                                        size={18}
+                                        className="animate-spin"
+                                    />
+                                    Creating Topic...
+                                </>
+                            ) : (
+                                <>
+                                    <PlusIcon />
+                                    Create Topic
+                                </>
+                            )}
+                        </button>
+                    </form>
+                </section>
+            </div>
+        </main>
     );
 };
+
+function PlusIcon() {
+    return <Layers size={18} />;
+}
 
 export default CreateTopicForm;
