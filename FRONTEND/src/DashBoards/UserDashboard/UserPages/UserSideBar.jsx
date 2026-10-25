@@ -11,7 +11,7 @@ import {
     ChartBarIncreasing,
     Menu,
     X,
-    HousePlug,
+    Boxes
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
@@ -96,7 +96,7 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
                             }`
                         }
                     >
-                        <HousePlug />
+                        <Home />
                         <h1>Home page</h1>
                     </NavLink>
 
@@ -113,7 +113,7 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
                             }`
                         }
                     >
-                        <Home />
+                        <Boxes />
                         <h1>Dashboard</h1>
                     </NavLink>
 

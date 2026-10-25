@@ -1,6 +1,9 @@
 const User = require("../modules/registerSchema");
 const mongoose = require("mongoose");
-const { ValidateUser, ValidateChangePassword } = require("../middlewares/validate");
+const {
+    ValidateUser,
+    ValidateChangePassword,
+} = require("../middlewares/validate");
 const bcrypt = require("bcrypt");
 const { DoHash } = require("../utils/hashing");
 const jwt = require("jsonwebtoken");
@@ -24,11 +27,41 @@ const clearAuthCookieOptions = () => ({
     path: "/",
 });
 
+// Strict password validation
+const getPasswordValidationError = (password) => {
+    if (typeof password !== "string") {
+        return "Password must be a valid string.";
+    }
+
+    if (password.length < 12) {
+        return "Password must contain at least 12 characters.";
+    }
+
+    if (password.length > 128) {
+        return "Password cannot exceed 128 characters.";
+    }
+
+    if (!/[a-z]/.test(password)) {
+        return "Password must contain at least one lowercase letter.";
+    }
+
+    if (!/[A-Z]/.test(password)) {
+        return "Password must contain at least one uppercase letter.";
+    }
+
+    if (!/[0-9]/.test(password)) {
+        return "Password must contain at least one number.";
+    }
+
+    if (!/[^A-Za-z0-9\s]/.test(password)) {
+        return "Password must contain at least one special character.";
+    }
+
+    return null;
+};
 
 exports.Register = async (req, res) => {
     try {
-        console.log(req.body);
-
         const {
             username,
             email,
@@ -39,7 +72,7 @@ exports.Register = async (req, res) => {
             department,
             role,
             lastLogin,
-            isLoggedIn
+            isLoggedIn,
         } = req.body;
 
         const { error } = ValidateUser.validate({
@@ -49,20 +82,30 @@ exports.Register = async (req, res) => {
             confirmPassword,
             matricNumber,
             level,
-            department
+            department,
         });
 
         if (error) {
             return res.status(400).json({
                 success: false,
-                message: error.details[0].message
+                message: error.details[0].message,
+            });
+        }
+
+        // Enforce password requirements before hashing.
+        const passwordError = getPasswordValidationError(password);
+
+        if (passwordError) {
+            return res.status(400).json({
+                success: false,
+                message: passwordError,
             });
         }
 
         if (confirmPassword !== password) {
             return res.status(400).json({
                 success: false,
-                message: "password din't match"
+                message: "Passwords do not match.",
             });
         }
 
@@ -71,7 +114,7 @@ exports.Register = async (req, res) => {
         if (check) {
             return res.status(409).json({
                 success: false,
-                message: "email already exists. Try another email."
+                message: "Email already exists. Try another email.",
             });
         }
 
@@ -95,7 +138,7 @@ exports.Register = async (req, res) => {
             isLoggedIn,
             lastLogin,
             verificationToken,
-            verificationTokenExpiresAt
+            verificationTokenExpiresAt,
         });
 
         await SendMail({
@@ -105,13 +148,13 @@ exports.Register = async (req, res) => {
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 24px;">
                     <h2>StudStore Account Verification Code</h2>
-                    <p>Keep this key secure and never share it with anyone.</p>
+                    <p>Keep this code secure and never share it with anyone.</p>
                     <div style="padding: 16px; background: #f1f5f9; font-size: 20px; font-weight: bold; word-break: break-all;">
                         ${verificationToken}
                     </div>
-                    <p>Thanks For Choosing StudStore.</p>
+                    <p>Thanks for choosing StudStore.</p>
                 </div>
-            `
+            `,
         });
 
         const hashedCodeValue = hmacProcess(
@@ -125,15 +168,15 @@ exports.Register = async (req, res) => {
 
         return res.status(201).json({
             success: true,
-            message: "Registration successful. Please check your email for the verification code."
+            message:
+                "Registration successful. Please check your email for the verification code.",
         });
-
     } catch (error) {
         console.error("REGISTRATION ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Registration failed"
+            message: "Registration failed.",
         });
     }
 };
@@ -147,14 +190,14 @@ exports.verifyVerificationCode = async (req, res) => {
         if (!existingUser) {
             return res.status(404).json({
                 success: false,
-                message: "User not found with this email"
+                message: "User not found with this email.",
             });
         }
 
         if (existingUser.isVerified) {
             return res.status(409).json({
                 success: false,
-                message: "You are already a verified user"
+                message: "You are already a verified user.",
             });
         }
 
@@ -166,14 +209,14 @@ exports.verifyVerificationCode = async (req, res) => {
         if (hashedCodeValue !== existingUser.verificationToken) {
             return res.status(400).json({
                 success: false,
-                message: "Incorrect verification token"
+                message: "Incorrect verification token.",
             });
         }
 
         if (Date.now() > existingUser.verificationTokenExpiresAt) {
             return res.status(400).json({
                 success: false,
-                message: "Validation expired"
+                message: "Verification code has expired.",
             });
         }
 
@@ -187,11 +230,11 @@ exports.verifyVerificationCode = async (req, res) => {
                 id: existingUser._id,
                 role: existingUser.role,
                 email: existingUser.email,
-                isVerified: true
+                isVerified: true,
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: "1h"
+                expiresIn: "1h",
             }
         );
 
@@ -205,11 +248,11 @@ exports.verifyVerificationCode = async (req, res) => {
             {
                 id: existingUser._id,
                 role: existingUser.role,
-                email: existingUser.email
+                email: existingUser.email,
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: "4d"
+                expiresIn: "4d",
             }
         );
 
@@ -241,7 +284,7 @@ exports.verifyVerificationCode = async (req, res) => {
 
                     <p>Hi ${existingUser.username},</p>
 
-                    <h1 style="text-align: center;">Welcome to StudStore! 🎉</h1>
+                    <h1 style="text-align: center;">Welcome to StudStore!</h1>
 
                     <p>
                         We're excited to have you join our growing community of learners,
@@ -256,10 +299,10 @@ exports.verifyVerificationCode = async (req, res) => {
 
                     <p><strong>With StudStore, you can:</strong></p>
 
-                    <h3>📚 Learn Smarter</h3>
+                    <h3>Learn Smarter</h3>
                     <p>Explore courses, lessons, and topics designed to support your academic journey.</p>
 
-                    <h3>💡 Expand Your Knowledge</h3>
+                    <h3>Expand Your Knowledge</h3>
                     <p>Discover learning materials, educational videos, and useful resources.</p>
 
                     <h3>Explore Engineering Research</h3>
@@ -287,9 +330,7 @@ exports.verifyVerificationCode = async (req, res) => {
                         community, and we look forward to being part of your academic journey.
                     </p>
 
-                    <p>
-                        Ready to get started? Log in to your account and start exploring!
-                    </p>
+                    <p>Log in to your account and start exploring!</p>
 
                     <h2 style="text-align: center; color: #2563eb;">
                         Learn. Explore. Innovate.
@@ -308,21 +349,20 @@ exports.verifyVerificationCode = async (req, res) => {
                         Thank you for choosing StudStore.
                     </p>
                 </div>
-            `
+            `,
         });
 
         return res.status(200).json({
             success: true,
             user,
-            message: "Logged in successfully"
+            message: "Logged in successfully.",
         });
-
     } catch (error) {
         console.error("VERIFICATION ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Something went wrong"
+            message: "Something went wrong.",
         });
     }
 };
@@ -331,12 +371,27 @@ exports.Login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email });
+        // Reject non-string inputs before performing database queries.
+        if (
+            typeof email !== "string" ||
+            typeof password !== "string" ||
+            !email.trim() ||
+            !password
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a valid email and password.",
+            });
+        }
+
+        const user = await User.findOne({
+            email: email.trim().toLowerCase(),
+        });
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found.",
             });
         }
 
@@ -345,14 +400,14 @@ exports.Login = async (req, res) => {
         if (!compare) {
             return res.status(400).json({
                 success: false,
-                message: "Incorrect password"
+                message: "Incorrect password.",
             });
         }
 
         if (!user.isVerified) {
             return res.status(409).json({
                 success: false,
-                message: "Please verify your account before login"
+                message: "Please verify your account before login.",
             });
         }
 
@@ -361,11 +416,11 @@ exports.Login = async (req, res) => {
                 id: user._id,
                 role: user.role,
                 email: user.email,
-                isVerified: user.isVerified
+                isVerified: user.isVerified,
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: "1h"
+                expiresIn: "1h",
             }
         );
 
@@ -379,11 +434,11 @@ exports.Login = async (req, res) => {
             {
                 id: user._id,
                 role: user.role,
-                email: user.email
+                email: user.email,
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: "4d"
+                expiresIn: "4d",
             }
         );
 
@@ -406,15 +461,14 @@ exports.Login = async (req, res) => {
         return res.status(200).json({
             success: true,
             user: sentUser,
-            message: "Logged in successfully"
+            message: "Logged in successfully.",
         });
-
     } catch (error) {
         console.error("LOGIN ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Something went wrong during login"
+            message: "Something went wrong during login.",
         });
     }
 };
@@ -428,7 +482,7 @@ exports.Logout = async (req, res) => {
         if (!existingUser) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found.",
             });
         }
 
@@ -441,15 +495,14 @@ exports.Logout = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "You have logged out successfully"
+            message: "You have logged out successfully.",
         });
-
     } catch (error) {
         console.error("LOGOUT ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Something went wrong during logout"
+            message: "Something went wrong during logout.",
         });
     }
 };
@@ -461,13 +514,23 @@ exports.ChangePassword = async (req, res) => {
 
         const checking = ValidateChangePassword.validate({
             oldPassword,
-            newPassword
+            newPassword,
         });
 
         if (checking.error) {
             return res.status(400).json({
                 success: false,
-                message: checking.error.details[0].message
+                message: checking.error.details[0].message,
+            });
+        }
+
+        // Validate the new password before hashing.
+        const passwordError = getPasswordValidationError(newPassword);
+
+        if (passwordError) {
+            return res.status(400).json({
+                success: false,
+                message: passwordError,
             });
         }
 
@@ -476,14 +539,14 @@ exports.ChangePassword = async (req, res) => {
         if (!existingUser) {
             return res.status(404).json({
                 success: false,
-                message: "No user was found"
+                message: "No user was found.",
             });
         }
 
         if (!existingUser.isVerified) {
             return res.status(403).json({
                 success: false,
-                message: "You are not a verified user"
+                message: "You are not a verified user.",
             });
         }
 
@@ -495,7 +558,7 @@ exports.ChangePassword = async (req, res) => {
         if (!result) {
             return res.status(401).json({
                 success: false,
-                message: "invalid credentials"
+                message: "Invalid credentials.",
             });
         }
 
@@ -507,15 +570,14 @@ exports.ChangePassword = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Password updated successfuly"
+            message: "Password updated successfully.",
         });
-
     } catch (error) {
         console.error("CHANGE PASSWORD ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Something went wrong"
+            message: "Something went wrong.",
         });
     }
 };
@@ -524,19 +586,28 @@ exports.ForgotPasswordEmail = async (req, res) => {
     try {
         const { email } = req.body;
 
-        const existingUser = await User.findOne({ email });
+        if (typeof email !== "string" || !email.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a valid email address.",
+            });
+        }
+
+        const existingUser = await User.findOne({
+            email: email.trim().toLowerCase(),
+        });
 
         if (!existingUser) {
             return res.status(404).json({
                 success: false,
-                message: "No User found with this email"
+                message: "No user found with this email.",
             });
         }
 
         if (!existingUser.isVerified) {
             return res.status(403).json({
                 success: false,
-                message: "You are not a verifeid user"
+                message: "You are not a verified user.",
             });
         }
 
@@ -550,8 +621,8 @@ exports.ForgotPasswordEmail = async (req, res) => {
         const sendingMail = await transport.sendMail({
             from: process.env.NODE_CODE_SENDING_EMAIL_ADDRESS,
             to: existingUser.email,
-            subject: "Forgot Passord Code",
-            html: "<h1>" + forgotPasswordCode + "</h1>"
+            subject: "Forgot Password Code",
+            html: "<h1>" + forgotPasswordCode + "</h1>",
         });
 
         if (sendingMail.accepted[0] === existingUser.email) {
@@ -567,11 +638,11 @@ exports.ForgotPasswordEmail = async (req, res) => {
             const verificationToken = jwt.sign(
                 {
                     user_Id: existingUser._id,
-                    purpose: "forget-password-user"
+                    purpose: "forget-password-user",
                 },
                 process.env.JWT_SECRET,
                 {
-                    expiresIn: "1h"
+                    expiresIn: "1h",
                 }
             );
 
@@ -585,21 +656,20 @@ exports.ForgotPasswordEmail = async (req, res) => {
 
             return res.status(200).json({
                 success: true,
-                message: "Check Email For Reset Password"
+                message: "Check your email for the reset password code.",
             });
         }
 
         return res.status(500).json({
             success: false,
-            message: "Unable to send the reset password code"
+            message: "Unable to send the reset password code.",
         });
-
     } catch (error) {
         console.error("FORGOT PASSWORD ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Something went wrong while sending the reset password code"
+            message: "Something went wrong while sending the reset password code.",
         });
     }
 };
@@ -613,7 +683,7 @@ exports.VerifyForgotPasswordCode = async (req, res) => {
         if (!verificationToken) {
             return res.status(401).json({
                 success: false,
-                message: "Token Expired"
+                message: "Token expired.",
             });
         }
 
@@ -625,7 +695,7 @@ exports.VerifyForgotPasswordCode = async (req, res) => {
         if (decoded.purpose !== "forget-password-user") {
             return res.status(403).json({
                 success: false,
-                message: "Invalid verification session"
+                message: "Invalid verification session.",
             });
         }
 
@@ -634,14 +704,14 @@ exports.VerifyForgotPasswordCode = async (req, res) => {
         if (!existingUser) {
             return res.status(404).json({
                 success: false,
-                message: "User not found with this email"
+                message: "User not found with this email.",
             });
         }
 
         if (!existingUser.isVerified) {
             return res.status(403).json({
                 success: false,
-                message: "You are not a verified User"
+                message: "You are not a verified user.",
             });
         }
 
@@ -653,25 +723,25 @@ exports.VerifyForgotPasswordCode = async (req, res) => {
         if (hashedCodeValue !== existingUser.forgotPasswordCode) {
             return res.status(400).json({
                 success: false,
-                message: "Incorrect verification token"
+                message: "Incorrect verification token.",
             });
         }
 
         if (Date.now() > existingUser.forgotPasswordCodeExpiresAt) {
             return res.status(400).json({
                 success: false,
-                message: "Expirerd code"
+                message: "Verification code has expired.",
             });
         }
 
         const resetToken = jwt.sign(
             {
                 id: existingUser._id,
-                purpose: "reset-password"
+                purpose: "reset-password",
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: "1h"
+                expiresIn: "1h",
             }
         );
 
@@ -685,15 +755,14 @@ exports.VerifyForgotPasswordCode = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Verification Successful"
+            message: "Verification successful.",
         });
-
     } catch (error) {
         console.error("VERIFY FORGOT PASSWORD ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Something went wrong"
+            message: "Something went wrong.",
         });
     }
 };
@@ -706,7 +775,7 @@ exports.ResetPassword = async (req, res) => {
         if (!resetToken) {
             return res.status(401).json({
                 success: false,
-                message: "Token Session Expired"
+                message: "Token session expired.",
             });
         }
 
@@ -715,32 +784,44 @@ exports.ResetPassword = async (req, res) => {
             process.env.JWT_SECRET
         );
 
+        if (decoded.purpose !== "reset-password") {
+            return res.status(403).json({
+                success: false,
+                message: "Invalid reset token.",
+            });
+        }
+
         const existingUser = await User.findById(decoded.id);
 
         if (!existingUser) {
             return res.status(404).json({
                 success: false,
-                message: "User not found with this email"
-            });
-        }
-
-        if (decoded.purpose !== "reset-password") {
-            return res.status(403).json({
-                success: false,
-                message: "Invalid reset token"
+                message: "User not found with this email.",
             });
         }
 
         if (password !== confirmPassword) {
             return res.status(409).json({
                 success: false,
-                message: "Password don't match"
+                message: "Passwords do not match.",
+            });
+        }
+
+        // Validate reset passwords before hashing.
+        const passwordError = getPasswordValidationError(password);
+
+        if (passwordError) {
+            return res.status(400).json({
+                success: false,
+                message: passwordError,
             });
         }
 
         const hashedPassword = await DoHash(password, 10);
 
         existingUser.password = hashedPassword;
+        existingUser.forgotPasswordCode = undefined;
+        existingUser.forgotPasswordCodeExpiresAt = undefined;
 
         await existingUser.save();
 
@@ -749,17 +830,21 @@ exports.ResetPassword = async (req, res) => {
             clearAuthCookieOptions()
         );
 
+        res.clearCookie(
+            "forget-password-user",
+            clearAuthCookieOptions()
+        );
+
         return res.status(200).json({
             success: true,
-            message: "Password updated successfully"
+            message: "Password updated successfully.",
         });
-
     } catch (error) {
         console.error("RESET PASSWORD ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Something went wrong"
+            message: "Something went wrong.",
         });
     }
 };
@@ -771,7 +856,7 @@ exports.getRefreshToken = async (req, res) => {
         if (!refreshToken) {
             return res.status(401).json({
                 success: false,
-                message: "No refresh token was found"
+                message: "No refresh token was found.",
             });
         }
 
@@ -783,16 +868,17 @@ exports.getRefreshToken = async (req, res) => {
         if (!decodedUser.id) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid refresh token payload"
+                message: "Invalid refresh token payload.",
             });
         }
 
         const user = await User.findById(decodedUser.id);
 
-        if (!user || !user.isVerified) {
+        if (!user || !user.isVerified || !user.isLoggedIn) {
             return res.status(401).json({
                 success: false,
-                message: "User not found or account not verified"
+                message:
+                    "Session expired or account not verified. Please log in again.",
             });
         }
 
@@ -801,11 +887,11 @@ exports.getRefreshToken = async (req, res) => {
                 id: user._id,
                 role: user.role,
                 email: user.email,
-                isVerified: user.isVerified
+                isVerified: user.isVerified,
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: "1h"
+                expiresIn: "1h",
             }
         );
 
@@ -817,17 +903,17 @@ exports.getRefreshToken = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Access token refreshed successfully"
+            message: "Access token refreshed successfully.",
         });
-
     } catch (error) {
         console.error("REFRESH TOKEN ERROR:", error.message);
 
         return res.status(401).json({
             success: false,
-            message: error.name === "TokenExpiredError"
-                ? "Refresh token expired. Please log in again."
-                : "Invalid refresh token"
+            message:
+                error.name === "TokenExpiredError"
+                    ? "Refresh token expired. Please log in again."
+                    : "Invalid refresh token.",
         });
     }
 };
@@ -845,19 +931,19 @@ exports.getAllUsers = async (req, res) => {
                 .select(
                     "username email role isVerified isLoggedIn lastLoggedIn createdAt updatedAt"
                 )
-                .lean()
+                .lean(),
         ]);
 
         const formattedStudents = students.map((student) => ({
             ...student,
             accountType: "Student",
-            lastLogin: student.lastLogin
+            lastLogin: student.lastLogin,
         }));
 
         const formattedAdmins = admins.map((admin) => ({
             ...admin,
             accountType: "Admin",
-            lastLogin: admin.lastLoggedIn
+            lastLogin: admin.lastLoggedIn,
         }));
 
         const allUsers = [...formattedStudents, ...formattedAdmins].sort(
@@ -871,15 +957,14 @@ exports.getAllUsers = async (req, res) => {
             totalUsers: allUsers.length,
             totalStudents: students.length,
             totalAdmins: admins.length,
-            users: allUsers
+            users: allUsers,
         });
-
     } catch (error) {
         console.error("GET ALL USERS ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Failed to retrieve users"
+            message: "Failed to retrieve users.",
         });
     }
 };
@@ -893,7 +978,7 @@ exports.updateUser = async (req, res) => {
             email,
             level,
             department,
-            matricNumber
+            matricNumber,
         } = req.body;
 
         const updates = {};
@@ -910,7 +995,7 @@ exports.updateUser = async (req, res) => {
         if (Object.keys(updates).length === 0) {
             return res.status(400).json({
                 success: false,
-                message: "No valid fields provided for update"
+                message: "No valid fields provided for update.",
             });
         }
 
@@ -919,7 +1004,7 @@ exports.updateUser = async (req, res) => {
             { $set: updates },
             {
                 new: true,
-                runValidators: true
+                runValidators: true,
             }
         ).select(
             "username email level department matricNumber role isVerified isLoggedIn lastLogin createdAt updatedAt"
@@ -928,22 +1013,21 @@ exports.updateUser = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found.",
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "User updated successfully",
-            user
+            message: "User updated successfully.",
+            user,
         });
-
     } catch (error) {
         console.error("UPDATE USER ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Failed to update user"
+            message: "Failed to update user.",
         });
     }
 };
@@ -952,12 +1036,22 @@ exports.deleteUser = async (req, res) => {
     try {
         const { userId } = req.params;
 
+        if (
+            typeof userId !== "string" ||
+            !mongoose.Types.ObjectId.isValid(userId)
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid user ID.",
+            });
+        }
+
         const user = await User.findById(userId);
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found.",
             });
         }
 
@@ -965,15 +1059,14 @@ exports.deleteUser = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "User deleted successfully"
+            message: "User deleted successfully.",
         });
-
     } catch (error) {
         console.error("DELETE USER ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Failed to delete user"
+            message: "Failed to delete user.",
         });
     }
 };

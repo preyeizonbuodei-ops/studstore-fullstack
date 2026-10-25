@@ -1,7 +1,9 @@
+
 import axios from "axios";
 import { create } from "zustand";
 
-const API_URL = "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/users";
+const API_URL =
+    "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/users";
 
 axios.defaults.withCredentials = true;
 
@@ -12,42 +14,59 @@ const getTopicId = (material) => {
 };
 
 const useSavedMaterialStore = create((set, get) => ({
-    // State
     savedMaterials: [],
     loading: false,
-
     saving: false,
     savingMaterialUrl: null,
-
     deleting: false,
     error: null,
     message: null,
 
-    // Check whether a material is saved for a particular topic.
+    // Check whether a URL is already saved for a topic.
     isMaterialSaved: (url, topicId) => {
         if (!url || !topicId) return false;
 
         return get().savedMaterials.some(
             (material) =>
                 material.url === url &&
-                getTopicId(material) === String(topicId)
+                getTopicId(material) === String(
+                    topicId?._id || topicId
+                )
         );
     },
 
-    // Save one material.
+    // Save a material, video, or resource.
     saveMaterial: async (materialData) => {
-        const materialUrl = materialData?.url;
-        const topicId = materialData?.topicId;
+        const rawTopicId = materialData?.topicId;
 
-        if (!materialUrl || !topicId) {
+        const topicId = String(
+            rawTopicId?._id || rawTopicId || ""
+        ).trim();
+
+        const title = String(
+            materialData?.title || ""
+        ).trim();
+
+        const url = String(
+            materialData?.url || ""
+        ).trim();
+
+        const allowedTypes = ["material", "video", "resource"];
+
+        const resourceType = allowedTypes.includes(
+            materialData?.resourceType
+        )
+            ? materialData.resourceType
+            : "material";
+
+        if (!topicId || !title || !url) {
             return {
                 success: false,
-                message: "Material URL and topic ID are required.",
+                message: "Material title, URL, and topic ID are required.",
             };
         }
 
-        // Prevent duplicate requests for an already-saved material.
-        if (get().isMaterialSaved(materialUrl, topicId)) {
+        if (get().isMaterialSaved(url, topicId)) {
             return {
                 success: true,
                 message: "This material is already saved.",
@@ -56,7 +75,7 @@ const useSavedMaterialStore = create((set, get) => ({
 
         set({
             saving: true,
-            savingMaterialUrl: materialUrl,
+            savingMaterialUrl: url,
             error: null,
             message: null,
         });
@@ -64,42 +83,54 @@ const useSavedMaterialStore = create((set, get) => ({
         try {
             const response = await axios.post(
                 `${API_URL}/save-material`,
-                materialData
+                {
+                    topicId,
+                    title,
+                    url,
+                    resourceType,
+                }
             );
 
             const savedMaterial = response.data.savedMaterial;
 
-            // Update the local state immediately after a successful request.
             if (savedMaterial) {
                 set((state) => {
-                    const alreadyExists = state.savedMaterials.some(
-                        (material) =>
-                            material.url === savedMaterial.url &&
-                            getTopicId(material) === getTopicId(savedMaterial)
-                    );
+                    const alreadyExists =
+                        state.savedMaterials.some(
+                            (material) =>
+                                material.url === savedMaterial.url &&
+                                getTopicId(material) ===
+                                    getTopicId(savedMaterial)
+                        );
 
                     return {
                         savedMaterials: alreadyExists
                             ? state.savedMaterials
-                            : [savedMaterial, ...state.savedMaterials],
+                            : [
+                                  savedMaterial,
+                                  ...state.savedMaterials,
+                              ],
                     };
                 });
             }
 
+            const message =
+                response.data.message ||
+                "Material saved successfully.";
+
             set({
                 saving: false,
                 savingMaterialUrl: null,
-                message:
-                    response.data.message || "Material saved successfully.",
+                message,
+                error: null,
             });
 
-            // Fetch the latest saved records from the backend.
+            // Refresh the list while retaining the successful save result.
             const refreshResult = await get().getSavedMaterials();
 
-            // If refreshing fails, retain the record added locally above.
             if (!refreshResult.success) {
                 console.warn(
-                    "Material was saved, but refreshing the saved list failed:",
+                    "Material was saved, but the saved list could not be refreshed:",
                     refreshResult.message
                 );
             }
@@ -107,8 +138,7 @@ const useSavedMaterialStore = create((set, get) => ({
             return {
                 success: true,
                 data: savedMaterial,
-                message:
-                    response.data.message || "Material saved successfully.",
+                message,
             };
         } catch (error) {
             const errorMessage =
@@ -175,7 +205,7 @@ const useSavedMaterialStore = create((set, get) => ({
         }
     },
 
-    // Delete one saved material.
+    // Delete a saved material.
     deleteSavedMaterial: async (materialId) => {
         if (!materialId) {
             return {
@@ -197,17 +227,21 @@ const useSavedMaterialStore = create((set, get) => ({
 
             set((state) => ({
                 savedMaterials: state.savedMaterials.filter(
-                    (material) => material._id !== materialId
+                    (material) =>
+                        String(material._id) !== String(materialId)
                 ),
                 deleting: false,
                 message:
-                    response.data.message || "Material removed successfully.",
+                    response.data.message ||
+                    "Material removed successfully.",
+                error: null,
             }));
 
             return {
                 success: true,
                 message:
-                    response.data.message || "Material removed successfully.",
+                    response.data.message ||
+                    "Material removed successfully.",
             };
         } catch (error) {
             const errorMessage =

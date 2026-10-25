@@ -1,23 +1,67 @@
 import { motion } from "motion/react";
 import Input from "../Components/Register/InputConponents";
 import {
-    Book,
     FlaskConical,
     GraduationCap,
     Loader,
     Lock,
     Mail,
     Rocket,
-    User
+    User,
+    Eye,
+    EyeOff
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import faculty from "../Image/robot1.jpg";
-import logo from '../Image/FBLOGO.jpg';
+import logo from "../Image/FBLOGO.jpg";
 import { useAuthStore } from "../Store/AuthStore";
 
-const UserRegister = () => {
+const matricNumberRegex =
+    /^FUO\/\d{2}\/(MCE|CVE|PGE|EEE|MEE|CHM)\/\d{5}$/;
 
+const departmentByCode = {
+    CVE: {
+        name: "Civil Engineering",
+        aliases: ["civilengineering", "civil"]
+    },
+    MEE: {
+        name: "Mechanical Engineering",
+        aliases: ["mechanicalengineering", "mechanical"]
+    },
+    MCE: {
+        name: "Mechatronics Engineering",
+        aliases: ["mechatronicsengineering", "mechatronics"]
+    },
+    PGE: {
+        name: "Petroleum and Gas Engineering",
+        aliases: [
+            "petroleumandgas",
+            "petroleumandgasengineering",
+            "petroleumgas",
+            "petroleumgasengineering"
+        ]
+    },
+    EEE: {
+        name: "Electrical Electronics Engineering",
+        aliases: [
+            "electricalelectronicsengineering",
+            "electricalandelectronicsengineering",
+            "electricalelectronics"
+        ]
+    },
+    CHM: {
+        name: "Chemical Engineering",
+        aliases: ["chemicalengineering", "chemical"]
+    }
+};
+
+const normalizeDepartment = (department) =>
+    String(department || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+
+const UserRegister = () => {
     const navigate = useNavigate();
 
     const initialValues = {
@@ -30,280 +74,282 @@ const UserRegister = () => {
         department: ""
     };
 
-    const [formValues, setFormvalues] = useState(initialValues);
+    const [formValues, setFormValues] = useState(initialValues);
     const [formErrors, setFormErrors] = useState({});
-    const [isSubmit, setIsSubmit] = useState(false);
-    const [ serverError, setServerError ] = useState();
+    const [hasSubmitted, setHasSubmitted] = useState(false);
+    const [serverError, setServerError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const { signup, isLoading, error } = useAuthStore();
+    const { signup, isLoading } = useAuthStore();
 
-
-    // Handle input changes
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-
-        setFormvalues({...formValues, [name]: value});
-    };
-
-
-    // Validation
+    // Validate the form only when requested.
     const validate = (values) => {
-
         const errors = {};
 
-        if (!values.username) {
-            errors.username = "Username is required";
+        if (!values.username.trim()) {
+            errors.username = "Username is required.";
+        } else if (values.username.trim().length < 5) {
+            errors.username = "Username must contain at least 5 characters.";
+        } else if (values.username.trim().length > 59) {
+            errors.username = "Username cannot exceed 59 characters.";
         }
 
-        if (!values.email) {
-            errors.email = "Email is required";
+        if (!values.email.trim()) {
+            errors.email = "Email is required.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
+            errors.email = "Please enter a valid email address.";
         }
 
         if (!values.password) {
-            errors.password = "Password is required";
+            errors.password = "Password is required.";
+        } else if (values.password.length < 12) {
+            errors.password = "Password must contain at least 12 characters.";
+        } else if (values.password.length > 128) {
+            errors.password = "Password cannot exceed 128 characters.";
+        } else if (
+            !/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s])[\s\S]+$/.test(
+                values.password
+            )
+        ) {
+            errors.password =
+                "Use uppercase and lowercase letters, a number, and a special character.";
         }
 
         if (!values.confirmPassword) {
-            errors.confirmPassword = "Please confirm your password";
+            errors.confirmPassword = "Please confirm your password.";
+        } else if (values.password !== values.confirmPassword) {
+            errors.confirmPassword = "Passwords do not match.";
         }
 
-        if (
-            values.password &&
-            values.confirmPassword &&
-            values.password !== values.confirmPassword
-        ) {
-            errors.confirmPassword = "Passwords do not match";
-        }
+        if (!values.matricNumber.trim()) {
+            errors.matricNumber = "Matric number is required.";
+        } else {
+            const match = values.matricNumber.trim().match(matricNumberRegex);
 
-        if (!values.matricNumber) {
-            errors.matricNumber = "Matric Number is required";
+            if (!match) {
+                errors.matricNumber =
+                    "Use the format FUO/24/MCE/12345 with a valid department code.";
+            } else if (values.department) {
+                const code = match[1];
+                const expectedDepartment = departmentByCode[code];
+                const selectedDepartment = normalizeDepartment(
+                    values.department
+                );
+
+                if (
+                    expectedDepartment &&
+                    !expectedDepartment.aliases.includes(selectedDepartment)
+                ) {
+                    errors.department =
+                        `The code ${code} requires ${expectedDepartment.name}.`;
+                }
+            }
         }
 
         if (!values.department) {
-            errors.department = "Department is required";
+            errors.department = "Please select your department.";
         }
 
         if (!values.level) {
-            errors.level = "Level is required";
+            errors.level = "Please select your level.";
         }
 
         return errors;
     };
 
+    // Handle input changes without showing errors on initial page load.
+    const handleChange = (e) => {
+        const { name } = e.target;
+        let { value } = e.target;
 
-    // Handle form submit
+        // Keep matric numbers in the required uppercase format.
+        if (name === "matricNumber") {
+            value = value.toUpperCase().replace(/\s/g, "");
+        }
+
+        const updatedValues = {
+            ...formValues,
+            [name]: value
+        };
+
+        setFormValues(updatedValues);
+        setServerError("");
+
+        // Revalidate only after the student has attempted submission.
+        if (hasSubmitted) {
+            setFormErrors(validate(updatedValues));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        
 
         if (isLoading) {
             return;
         }
 
-        const errors = validate(formValues);
+        setHasSubmitted(true);
+        setServerError("");
 
+        const errors = validate(formValues);
         setFormErrors(errors);
-        setIsSubmit(true);
 
         if (Object.keys(errors).length > 0) {
             return;
         }
-        
 
         try {
             await signup(
-                formValues.email,
+                formValues.email.trim(),
                 formValues.password,
                 formValues.confirmPassword,
-                formValues.username,
+                formValues.username.trim(),
                 formValues.department,
-                formValues.matricNumber,
+                formValues.matricNumber.trim(),
                 formValues.level
             );
 
-            console.log("Registration successful");
-
             navigate("/verify-email", {
-                state: { email: formValues.email }
-            })
-
-            
-
+                state: { email: formValues.email.trim() }
+            });
         } catch (error) {
-            console.log("STATUS:", error.response?.status);
-            console.log("DATA:", error.response?.data);
-            console.log("MESSAGE:", error.response?.data?.message);
+            console.error("Registration failed.");
 
-            setServerError(error.response?.data?.message || "Something went wrong");
-            console.log(error)
-            
+            setServerError(
+                error.response?.data?.message ||
+                "Registration failed. Please check your details and try again."
+            );
         }
     };
 
+    const passwordInputClass =
+        "w-full rounded-lg py-2.5 pl-10 pr-12 bg-gray-50 border border-gray-200 outline-none transition duration-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500";
+
+    const fieldErrorClass = "text-red-500 text-xs mt-1";
 
     return (
-
         <div className="relative min-h-screen w-full bg-gray-100 flex items-center justify-center p-5">
-
             <motion.div
                 initial={{ opacity: 0, y: 33 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.88 }}
-                className="flex w-full max-w-5xl overflow-hidden mt-15 rounded-lg bg-white c"
+                className="flex w-full max-w-5xl overflow-hidden mt-4 md:mt-8 rounded-lg bg-white shadow-lg"
             >
-
+                {/* Left information panel */}
                 <div className="relative hidden md:block w-1/2 min-h-[700px] overflow-hidden">
-
                     <img
                         src={faculty}
                         alt="Faculty of Engineering"
                         className="absolute inset-0 h-full w-full object-cover"
                     />
 
-                    {/* Dark overlay */}
-
-                    <div className="absolute inset-0 bg-linear-to-t from-blue-950 via-black/30 to-blue-600"></div>
-
+                    <div className="absolute inset-0 bg-linear-to-t from-blue-950 via-black/30 to-blue-600" />
 
                     <div className="absolute inset-0 px-10 text-white flex flex-col justify-between">
-
                         <div className="flex flex-col mt-5">
-
                             <div>
-
                                 <img
-                                    className="size-19 rounded-full mr-3"
+                                    className="size-19 rounded-full mr-3 object-cover"
                                     src={logo}
                                     alt="Faculty Logo"
                                 />
-
                             </div>
 
-
-                            <div className="mb-8">
-
+                            <div className="mb-8 mt-3">
                                 <h1 className="font-bold leading-6">
-                                    FACULTY OF <br /><span className="text-[22px]">ENGINEERING</span>
+                                    FACULTY OF
+                                    <br />
+                                    <span className="text-[22px]">
+                                        ENGINEERING
+                                    </span>
                                 </h1>
 
                                 <p className="text-amber-500 text-[13px] font-bold">
                                     Excellence. Innovation. Impact
                                 </p>
-
                             </div>
-
 
                             <div>
-
-                                <h1 className="font-bold text-[20px]">
-                                    Join a Community <br />of Innovators and <br /> problem solvers.
-                                </h1>
+                                <h2 className="font-bold text-[20px]">
+                                    Join a Community
+                                    <br />
+                                    of Innovators and
+                                    <br />
+                                    problem solvers.
+                                </h2>
 
                                 <p>
-                                    Register with us for free and get <br /><span className="text-amber-500 text-[22px] font-bold">STARTED</span>
+                                    Register with us for free and get
+                                    <br />
+                                    <span className="text-amber-500 text-[22px] font-bold">
+                                        STARTED
+                                    </span>
                                 </p>
-
                             </div>
-
                         </div>
 
-
-                        <div className="mb-3 flex flex-col gap-3">
-
+                        <div className="mb-5 flex flex-col gap-5">
                             <div className="flex items-center gap-3">
+                                <GraduationCap className="size-14 shrink-0 border rounded-lg border-amber-500 text-amber-500 p-1" />
 
                                 <div>
-
-                                    <GraduationCap className="size-15 border rounded-lg border-amber-500 text-amber-500" />
-
-                                </div>
-
-                                <div>
-
                                     <h2 className="font-bold">
                                         Quality Education
                                     </h2>
-
                                     <p className="text-[13px]">
-                                        Learn form experience <br />lecturers and indutry experts
+                                        Learn from experienced lecturers
+                                        <br />
+                                        and industry experts.
                                     </p>
-
                                 </div>
-
                             </div>
 
-
                             <div className="flex items-center gap-3">
+                                <FlaskConical className="size-14 shrink-0 border rounded-lg border-amber-500 text-amber-500 p-1" />
 
                                 <div>
-
-                                    <FlaskConical className="size-15 border rounded-lg border-amber-500 text-amber-500" />
-
-                                </div>
-
-                                <div>
-
                                     <h2 className="font-bold">
                                         Modern Facilities
                                     </h2>
-
                                     <p className="text-[13px]">
-                                        Access State-of-the-art-labes<br />and learning resources
+                                        Access state-of-the-art labs
+                                        <br />
+                                        and learning resources.
                                     </p>
-
                                 </div>
-
                             </div>
 
-
                             <div className="flex items-center gap-3">
+                                <Rocket className="size-14 shrink-0 border rounded-lg border-amber-500 text-amber-500 p-1" />
 
                                 <div>
-
-                                    <Rocket className="size-15 border rounded-lg border-amber-500 text-amber-500" />
-
-                                </div>
-
-                                <div>
-
                                     <h2 className="font-bold">
                                         Innovative Research
                                     </h2>
-
                                     <p className="text-[13px]">
-                                        Be part of cutting-edge research<br />and real-world solutions
+                                        Be part of cutting-edge research
+                                        <br />
+                                        and real-world solutions.
                                     </p>
-
                                 </div>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
 
-
+                {/* Registration form */}
                 <div className="w-full md:w-1/2 p-6 md:p-8">
-
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} noValidate>
                         <fieldset
                             disabled={isLoading}
                             className="min-w-0"
                         >
-                            {/* Heading */}
-
-                            <h1
-                                className="text-blue-950 text-center text-[23px] font-bold relative after:absolute after:bg-amber-500 after:top-9 after:left-1/2 after:-translate-x-1/2 after:rounded-lg after:w-15 after:h-1 mb-6"
-                            >
+                            <h1 className="text-blue-950 text-center text-[23px] font-bold relative after:absolute after:bg-amber-500 after:top-9 after:left-1/2 after:-translate-x-1/2 after:rounded-lg after:w-15 after:h-1 mb-7">
                                 Register
                             </h1>
 
-
                             {/* Username */}
-
                             <Input
                                 inputLabel="Username"
                                 icon={User}
@@ -311,16 +357,16 @@ const UserRegister = () => {
                                 name="username"
                                 value={formValues.username}
                                 onChange={handleChange}
-                                placeholder="Enter your Username"
+                                placeholder="Enter your username"
                             />
 
-                            <p className="text-red-500 text-[12px] mt-0">
-                                {formErrors.username}
-                            </p>
-
+                            {hasSubmitted && formErrors.username && (
+                                <p className={fieldErrorClass}>
+                                    {formErrors.username}
+                                </p>
+                            )}
 
                             {/* Email */}
-
                             <Input
                                 inputLabel="Email"
                                 icon={Mail}
@@ -331,78 +377,174 @@ const UserRegister = () => {
                                 onChange={handleChange}
                             />
 
-                            <p className="text-red-500 text-[12px] mt-0">
-                                {formErrors.email}
-                            </p>
+                            {hasSubmitted && formErrors.email && (
+                                <p className={fieldErrorClass}>
+                                    {formErrors.email}
+                                </p>
+                            )}
 
-
-                            {/* Matric Number */}
-
+                            {/* Matric number */}
                             <Input
                                 inputLabel="Matric Number"
                                 icon={GraduationCap}
                                 type="text"
-                                placeholder="FUO/xx/xxx/xxxxx"
+                                placeholder="FUO/24/MCE/12345"
                                 name="matricNumber"
                                 value={formValues.matricNumber}
                                 onChange={handleChange}
                             />
 
-                            <p className="text-red-500 text-[12px] mt-0">
-                                {formErrors.matricNumber}
-                            </p>
+                            {hasSubmitted && formErrors.matricNumber && (
+                                <p className={fieldErrorClass}>
+                                    {formErrors.matricNumber}
+                                </p>
+                            )}
 
+                            {/* Password with show/hide button */}
+                            <div className="mb-1">
+                                <label
+                                    htmlFor="password"
+                                    className="block pl-3 mb-1 text-blue-950"
+                                >
+                                    Password
+                                </label>
 
-                            {/* Password */}
+                                <div className="relative">
+                                    <Lock
+                                        size={19}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                                    />
 
-                            <Input
-                                inputLabel="Password"
-                                icon={Lock}
-                                type="password"
-                                placeholder="Enter password"
-                                name="password"
-                                value={formValues.password}
-                                onChange={handleChange}
-                            />
+                                    <input
+                                        id="password"
+                                        type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        value={formValues.password}
+                                        onChange={handleChange}
+                                        placeholder="Create a strong password"
+                                        autoComplete="new-password"
+                                        maxLength={128}
+                                        aria-invalid={
+                                            hasSubmitted && !!formErrors.password
+                                        }
+                                        className={passwordInputClass}
+                                    />
 
-                            <p className="text-red-500 text-[12px] mt-0">
-                                {formErrors.password}
-                            </p>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowPassword((previous) => !previous)
+                                        }
+                                        aria-label={
+                                            showPassword
+                                                ? "Hide password"
+                                                : "Show password"
+                                        }
+                                        aria-pressed={showPassword}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-950 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded p-1"
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff size={19} />
+                                        ) : (
+                                            <Eye size={19} />
+                                        )}
+                                    </button>
+                                </div>
 
+                                <p className="text-gray-500 text-xs mt-1">
+                                    At least 12 characters, with uppercase and
+                                    lowercase letters, a number, and a special
+                                    character.
+                                </p>
 
-                            {/* Confirm Password */}
+                                {hasSubmitted && formErrors.password && (
+                                    <p className={fieldErrorClass}>
+                                        {formErrors.password}
+                                    </p>
+                                )}
+                            </div>
 
-                            <Input
-                                inputLabel="Confirm Password"
-                                icon={Lock}
-                                type="password"
-                                placeholder="Confirm password"
-                                name="confirmPassword"
-                                value={formValues.confirmPassword}
-                                onChange={handleChange}
-                            />
+                            {/* Confirm password with independent show/hide button */}
+                            <div className="mt-4 mb-4">
+                                <label
+                                    htmlFor="confirmPassword"
+                                    className="block pl-3 mb-1 text-blue-950"
+                                >
+                                    Confirm Password
+                                </label>
 
-                            <p className="text-red-500 text-[12px] mt-0">
-                                {formErrors.confirmPassword}
-                            </p>
+                                <div className="relative">
+                                    <Lock
+                                        size={19}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                                    />
 
+                                    <input
+                                        id="confirmPassword"
+                                        type={
+                                            showConfirmPassword
+                                                ? "text"
+                                                : "password"
+                                        }
+                                        name="confirmPassword"
+                                        value={formValues.confirmPassword}
+                                        onChange={handleChange}
+                                        placeholder="Confirm your password"
+                                        autoComplete="new-password"
+                                        maxLength={128}
+                                        aria-invalid={
+                                            hasSubmitted &&
+                                            !!formErrors.confirmPassword
+                                        }
+                                        className={passwordInputClass}
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowConfirmPassword(
+                                                (previous) => !previous
+                                            )
+                                        }
+                                        aria-label={
+                                            showConfirmPassword
+                                                ? "Hide confirm password"
+                                                : "Show confirm password"
+                                        }
+                                        aria-pressed={showConfirmPassword}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-950 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded p-1"
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff size={19} />
+                                        ) : (
+                                            <Eye size={19} />
+                                        )}
+                                    </button>
+                                </div>
+
+                                {hasSubmitted && formErrors.confirmPassword && (
+                                    <p className={fieldErrorClass}>
+                                        {formErrors.confirmPassword}
+                                    </p>
+                                )}
+                            </div>
 
                             {/* Department */}
-
                             <div className="mb-4">
-
-                                <label className="block pl-3 mb-1 text-blue-950">
+                                <label
+                                    htmlFor="department"
+                                    className="block pl-3 mb-1 text-blue-950"
+                                >
                                     Select Department
                                 </label>
 
-
                                 <select
-                                    className="w-full rounded-lg py-2 pl-3 pr-3 bg-gray-50 border border-gray-200 outline-none transition duration-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
+                                    id="department"
+                                    className="w-full rounded-lg py-2.5 pl-3 pr-3 bg-gray-50 border border-gray-200 outline-none transition duration-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
                                     name="department"
                                     onChange={handleChange}
                                     value={formValues.department}
                                 >
-
                                     <option value="">
                                         Select Department
                                     </option>
@@ -411,7 +553,7 @@ const UserRegister = () => {
                                         Mechatronics Engineering
                                     </option>
 
-                                    <option value="Mechanical">
+                                    <option value="Mechanical Engineering">
                                         Mechanical Engineering
                                     </option>
 
@@ -427,121 +569,105 @@ const UserRegister = () => {
                                         Chemical Engineering
                                     </option>
 
-                                    <option value="Petroleum and Gas Engineering"   >
+                                    <option value="Petroleum and Gas Engineering">
                                         Petroleum and Gas Engineering
                                     </option>
-
                                 </select>
 
-                                <p className="text-red-500 text-[12px] mt-0">
-                                    {formErrors.department}
-                                </p>
-
+                                {hasSubmitted && formErrors.department && (
+                                    <p className={fieldErrorClass}>
+                                        {formErrors.department}
+                                    </p>
+                                )}
                             </div>
 
-
                             {/* Level */}
-
-                            <label className="block pl-3 mb-1 text-blue-950">
-                                Select Level
-                            </label>
-
-
-                            <div className="w-full rounded-lg py-2 pr-3 mb-3 bg-gray-50">
+                            <div className="mb-4">
+                                <label
+                                    htmlFor="level"
+                                    className="block pl-3 mb-1 text-blue-950"
+                                >
+                                    Select Level
+                                </label>
 
                                 <select
-                                    className="w-full rounded-lg py-2 pl-3 pr-3 bg-gray-50 border border-gray-200 outline-none transition duration-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
+                                    id="level"
+                                    className="w-full rounded-lg py-2.5 pl-3 pr-3 bg-gray-50 border border-gray-200 outline-none transition duration-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
                                     name="level"
                                     onChange={handleChange}
                                     value={formValues.level}
                                 >
-
-                                    <option value="">
-                                        Select level
-                                    </option>
-
-                                    <option value="100">
-                                        100
-                                    </option>
-
-                                    <option value="200">
-                                        200
-                                    </option>
-
-                                    <option value="300">
-                                        300
-                                    </option>
-
-                                    <option value="400">
-                                        400
-                                    </option>
-
-                                    <option value="500">
-                                        500
-                                    </option>
-
+                                    <option value="">Select level</option>
+                                    <option value="100">100</option>
+                                    <option value="200">200</option>
+                                    <option value="300">300</option>
+                                    <option value="400">400</option>
+                                    <option value="500">500</option>
                                 </select>
 
-                                <p className="text-red-500 text-[12px] mt-0">
-                                    {formErrors.level}
-                                </p>
-
+                                {hasSubmitted && formErrors.level && (
+                                    <p className={fieldErrorClass}>
+                                        {formErrors.level}
+                                    </p>
+                                )}
                             </div>
 
-
-                            {/* Register Button */}
-
+                            {/* Registration button */}
                             <motion.button
                                 type="submit"
                                 disabled={isLoading}
-                                whileHover={isLoading ? undefined : { scale: 1.02 }}
-                                className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-blue-900 text-white ${isLoading ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-blue-950 hover:scale-[1.02] hover:shadow-lg"}`}
+                                whileHover={
+                                    isLoading ? undefined : { scale: 1.01 }
+                                }
+                                whileTap={
+                                    isLoading ? undefined : { scale: 0.99 }
+                                }
+                                className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-blue-900 text-white ${
+                                    isLoading
+                                        ? "cursor-not-allowed opacity-70"
+                                        : "cursor-pointer hover:bg-blue-950 hover:shadow-lg"
+                                }`}
                             >
-
                                 {isLoading ? (
                                     <>
-                                        <Loader className="animate-spin inline-block mr-2" size={20} />
+                                        <Loader
+                                            className="animate-spin inline-block mr-2"
+                                            size={20}
+                                        />
                                         Registering...
                                     </>
                                 ) : (
                                     "Register"
                                 )}
-
                             </motion.button>
 
-                            <p>{serverError}</p>
-
-
-                            {/* Backend Error */}
-
-                            {error && (
-                                <p className="text-red-500 text-[12px] text-center mt-2">
-                                    {error}
+                            {/* Backend registration error */}
+                            {serverError && (
+                                <p
+                                    role="alert"
+                                    className="text-red-500 text-sm text-center mt-3"
+                                >
+                                    {serverError}
                                 </p>
                             )}
 
-
-                            {/* Login */}
-
-                            <div className="flex items-center justify-space-around mt-2">
-
-                                <p className="mb-2">
+                            {/* Login link */}
+                            <div className="flex flex-wrap items-center justify-center gap-2 mt-5 text-sm">
+                                <p className="text-gray-700">
                                     Already have an account?
                                 </p>
 
-                                
-                                <NavLink className="text-blue-500" to="/login">
+                                <NavLink
+                                    to="/login"
+                                    className="inline-flex items-center justify-center rounded-md px-3 py-1.5 font-semibold text-blue-900 hover:bg-blue-50 hover:underline transition-colors"
+                                >
                                     Login
                                 </NavLink>
-
                             </div>
-                        </fieldset>         
+                        </fieldset>
                     </form>
-
                 </div>
-
             </motion.div>
-
         </div>
     );
 };

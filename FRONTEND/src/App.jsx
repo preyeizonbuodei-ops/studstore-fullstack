@@ -1,3 +1,4 @@
+
 import { Route, Routes, useLocation } from "react-router-dom";
 import { useAuthStore } from "./Store/AuthStore";
 import { useEffect } from "react";
@@ -22,7 +23,7 @@ import StudStoreAi from "./StudStoreAi";
 
 // ADMIN
 import AdminSidebar from "./DashBoards/AdminDashboard/AdminPages/AdminSidebar";
-import AdminDefault from "./DashBoards/AdminDashboard/AdminPages/AdminDefault";
+import AdminMainContent from "./DashBoards/AdminDashboard/AdminPages/AdminMainContent";
 import AdminDepartment from "./DashBoards/AdminDashboard/AdminPages/Department";
 import AdminMajorArea from "./DashBoards/AdminDashboard/AdminPages/AdminMajorArea";
 import Topics from "./DashBoards/AdminDashboard/AdminPages/Topics";
@@ -42,11 +43,9 @@ import AdminEditLesson from "./DashBoards/AdminDashboard/AdminPageForms/AdminEdi
 import UserLanding from "./DashBoards/UserDashboard/UserPages/UserLanding";
 import UserDashBoard from "./DashBoards/UserDashboard/UserPages/UserDashBoard";
 import Courses from "./DashBoards/UserDashboard/UserPages/Courses";
-// USER COURSE CONTENT
 import TopicPage from "./DashBoards/UserDashboard/UserPages/Component/TopicsPage";
 import TopicLessonsPage from "./DashBoards/UserDashboard/UserPages/Component/TopicsLessonsPage";
 import LessonDetailsPage from "./DashBoards/UserDashboard/UserPages/Component/LessonDetailsPage";
-
 import Materials from "./DashBoards/UserDashboard/UserPages/Component/ResourcesPage";
 import Profile from "./DashBoards/UserDashboard/UserPages/Component/Profile";
 import Settings from "./DashBoards/UserDashboard/UserPages/Component/Settings";
@@ -74,19 +73,14 @@ import "./App.css";
 function App() {
     const location = useLocation();
 
-    // Hide the floating AI on all admin routes.
+    // Hide the floating AI tutor on admin routes.
     const isAdminPage = location.pathname.startsWith("/admin");
 
-    const checkAuth = useAuthStore(
-        (state) => state.checkAuth
-    );
+    const checkAuth = useAuthStore((state) => state.checkAuth);
 
     useEffect(() => {
         checkAuth();
     }, [checkAuth]);
-
-    // Used to show the AI tutor only to logged-in students.
-    const user = useAuthStore((state) => state.user);
 
     const AdminCheckAuth = adminCheck(
         (state) => state.AdminCheckAuth
@@ -215,7 +209,7 @@ function App() {
                     />
                 </Route>
 
-                {/* ==================== DEPARTMENTS ==================== */}
+                {/* ==================== RESEARCH ==================== */}
 
                 <Route
                     path="/research-papers"
@@ -229,9 +223,10 @@ function App() {
                         path="/admin-dashboard"
                         element={<AdminSidebar />}
                     >
+                        {/* Default admin course management page */}
                         <Route
                             index
-                            element={<AdminDefault />}
+                            element={<AdminMainContent />}
                         />
 
                         <Route
@@ -244,6 +239,7 @@ function App() {
                             element={<AdminMajorArea />}
                         />
 
+                        {/* Major Area Topics, not course topics */}
                         <Route
                             path="topics"
                             element={<Topics />}
@@ -260,6 +256,7 @@ function App() {
                         />
                     </Route>
 
+                    {/* Course management forms */}
                     <Route
                         path="/admin/create-course"
                         element={<CreateCourse />}
@@ -290,15 +287,13 @@ function App() {
                         element={<CreateTopicForm />}
                     />
 
-                    {/* Department Routes */}
-
+                    {/* Department management */}
                     <Route
                         path="/admin/create-department"
                         element={<CreateDepartment />}
                     />
 
-                    {/* Create Major Area */}
-
+                    {/* Major Area management */}
                     <Route
                         path="/admin/create-major-area"
                         element={<AdminCreateMajorArea />}
@@ -337,8 +332,6 @@ function App() {
                 {/* ==================== STUDENT ==================== */}
 
                 <Route element={<ProtectedRoute />}>
-                    {/* User Dashboard Layout */}
-
                     <Route element={<UserDashBoard />}>
                         <Route
                             path="/me"
@@ -355,33 +348,29 @@ function App() {
                             element={<Courses />}
                         />
 
-                        {/* Course → Topic → Lesson */}
-
-                        {/* COURSE → TOPICS */}
-
                         {/* Course → Topics */}
-                    <Route
-                        path="/courses/:courseId/topics"
-                        element={<TopicPage />}
-                    />
+                        <Route
+                            path="/courses/:courseId/topics"
+                            element={<TopicPage />}
+                        />
 
-                    {/* Backward compatibility for existing course links */}
-                    <Route
-                        path="/courses/:courseId/lesson"
-                        element={<TopicPage />}
-                    />
+                        {/* Preserve existing course links */}
+                        <Route
+                            path="/courses/:courseId/lesson"
+                            element={<TopicPage />}
+                        />
 
-                    {/* Topic → Lessons */}
-                    <Route
-                        path="/topics/:topicId/lessons"
-                        element={<TopicLessonsPage />}
-                    />
+                        {/* Topic → Lessons */}
+                        <Route
+                            path="/topics/:topicId/lessons"
+                            element={<TopicLessonsPage />}
+                        />
 
-                    {/* Lesson → Notes, videos and materials */}
-                    <Route
-                        path="/lessons/:lessonId"
-                        element={<LessonDetailsPage />}
-                    />
+                        {/* Lesson → Notes, examples, videos and materials */}
+                        <Route
+                            path="/lessons/:lessonId"
+                            element={<LessonDetailsPage />}
+                        />
 
                         <Route
                             path="/me/learning-materials"
@@ -421,7 +410,7 @@ function App() {
                 </Route>
             </Routes>
 
-            {/* Floating AI: hidden on admin pages */}
+            {/* Floating AI tutor: hidden on admin pages */}
             {!isAdminPage && <StudStoreAi />}
         </>
     );

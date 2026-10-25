@@ -450,7 +450,7 @@ export default function StudStoreAi() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Ask StudStore AI"
-          className="group fixed bottom-5 right-4 z-50 flex items-center gap-2 rounded-full border border-white/20 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700 px-3 py-2.5 text-white shadow-[0_8px_30px_-6px_rgba(79,70,229,0.65)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_35px_-6px_rgba(79,70,229,0.75)] sm:bottom-6 sm:right-6 sm:gap-2.5 sm:px-5 sm:py-3"
+          className="group fixed bottom-20 right-4 z-50 flex items-center gap-2 rounded-full border border-white/20 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700 px-3 py-2.5 text-white shadow-[0_8px_30px_-6px_rgba(79,70,229,0.65)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_35px_-6px_rgba(79,70,229,0.75)] sm:bottom-6 sm:right-6 sm:gap-2.5 sm:px-5 sm:py-3"
         >
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-xl transition group-hover:rotate-12 sm:h-9 sm:w-9">
             ✦
