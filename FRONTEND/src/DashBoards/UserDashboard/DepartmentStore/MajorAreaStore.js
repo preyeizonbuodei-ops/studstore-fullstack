@@ -2,9 +2,9 @@ import axios from "axios";
 import { create } from "zustand";
 
 const API_URL =
-    "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/admin";
+    "https://api.studstore.com.ng/api/v1/admin";
 const DEPARTMENT_URL =
-    "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/admin";
+    "https://api.studstore.com.ng/api/v1/admin";
 
 axios.defaults.withCredentials = true;
 

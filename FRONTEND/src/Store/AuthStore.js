@@ -1,12 +1,21 @@
+
 import { create } from "zustand";
 import axios from "axios";
 
-const API_URL = "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/users";
+const API_URL = "https://api.studstore.com.ng/api/v1/users";
 
 const API = axios.create({
     baseURL: API_URL,
     withCredentials: true,
+    headers: {
+        "Content-Type": "application/json",
+    },
 });
+
+const getErrorMessage = (error, fallback) =>
+    error.response?.data?.message ||
+    error.message ||
+    fallback;
 
 export const useAuthStore = create((set) => ({
     user: null,
@@ -15,6 +24,7 @@ export const useAuthStore = create((set) => ({
     isLoading: false,
     isCheckingAuth: true,
 
+    // Register a student.
     signup: async (
         email,
         password,
@@ -26,270 +36,338 @@ export const useAuthStore = create((set) => ({
     ) => {
         set({
             isLoading: true,
-            error: null
+            error: null,
         });
 
-        console.log("Sending registration request...");
-
         try {
-            const response = await axios.post(`${API_URL}/register`, {
+            const response = await API.post("/register", {
                 username,
                 email,
                 password,
                 confirmPassword,
                 department,
                 level,
-                matricNumber
+                matricNumber,
             });
 
             set({
-                user: response.data.newUser,
+                user: response.data.newUser || null,
                 isAuthenticated: false,
-                isLoading: false
+                isLoading: false,
+                error: null,
             });
 
             return response.data;
-
         } catch (error) {
-            console.log("Zustand error:", error.response?.data);
-
             set({
-                error:
-                    error.response?.data?.message ||
-                    "Error registering",
-                isLoading: false
+                error: getErrorMessage(
+                    error,
+                    "Error registering."
+                ),
+                isLoading: false,
             });
 
             throw error;
         }
     },
 
+    // Check authentication and refresh the access token when needed.
     checkAuth: async () => {
-        try {
+        set({ isCheckingAuth: true });
 
-            // First, try the existing access token
-            const response = await axios.get(
-                `${API_URL}/check-auth`
-            );
+        try {
+            const response = await API.get("/check-auth");
 
             set({
                 user: response.data.user,
                 isAuthenticated: true,
-                isCheckingAuth: false
+                isCheckingAuth: false,
+                error: null,
             });
 
             return response.data;
+        } catch (authError) {
+            // A network error or server error is not proof that
+            // the user's session is invalid.
+            if (authError.response?.status !== 401) {
+                set({ isCheckingAuth: false });
+                return null;
+            }
 
-        } catch (error) {
-
-            // Access token failed, so try the refresh token
             try {
+                // The browser sends the refresh cookie with this request.
+                await API.post("/refresh-token");
 
-                await axios.post(
-                    `${API_URL}/refresh-token`
-                );
-
-                // Refresh succeeded, so check authentication again
-                const response = await axios.get(
-                    `${API_URL}/check-auth`
-                );
+                // Confirm the renewed access token works.
+                const response = await API.get("/check-auth");
 
                 set({
                     user: response.data.user,
                     isAuthenticated: true,
-                    isCheckingAuth: false
+                    isCheckingAuth: false,
+                    error: null,
                 });
 
                 return response.data;
-
             } catch (refreshError) {
+                const status = refreshError.response?.status;
 
-                // Both access and refresh tokens failed
-                set({
-                    user: null,
-                    isAuthenticated: false,
-                    isCheckingAuth: false
-                });
+                if (status === 401 || status === 403) {
+                    // The backend rejected the refresh attempt.
+                    set({
+                        user: null,
+                        isAuthenticated: false,
+                        isCheckingAuth: false,
+                    });
+                } else {
+                    // Preserve the current local state during
+                    // temporary network or server failures.
+                    set({ isCheckingAuth: false });
+                }
 
                 return null;
             }
         }
     },
 
+    // Log in a student.
     Login: async (email, password) => {
+        set({
+            isLoading: true,
+            error: null,
+        });
+
         try {
-            const response = await axios.post(
-                `${API_URL}/login`,
-                {
-                    email,
-                    password
-                }
-            );
+            const response = await API.post("/login", {
+                email,
+                password,
+            });
 
             set({
                 user: response.data.user,
                 isAuthenticated: true,
                 isLoading: false,
-                error: null
+                isCheckingAuth: false,
+                error: null,
             });
 
             return response.data;
-
         } catch (error) {
-
-            console.log(
-                "Zustand error:",
-                error.response?.data
-            );
-
             set({
-                error:
-                    error.response?.data?.message ||
-                    "Error logging in",
+                error: getErrorMessage(
+                    error,
+                    "Error logging in."
+                ),
                 isLoading: false,
-                isAuthenticated: false
             });
 
             throw error;
         }
     },
 
+    // Verify a student's email.
     verifyEmailSent: async (email, verificationCode) => {
+        set({
+            isLoading: true,
+            error: null,
+        });
+
         try {
-            const response = await axios.patch(
-                `${API_URL}/verify-verification-code`,
+            const response = await API.patch(
+                "/verify-verification-code",
                 {
                     email,
-                    verificationCode
+                    verificationCode,
                 }
             );
 
             const data = response.data;
 
             set({
-                user: data.user,
-                isAuthenticated: true
+                user: data.user || null,
+                isAuthenticated: true,
+                isLoading: false,
+                isCheckingAuth: false,
+                error: null,
             });
 
-            console.log("Verified user:", data.user);
-
             return data;
-
         } catch (error) {
-            console.log("VERIFY ERROR:", error);
+            set({
+                isLoading: false,
+                error: getErrorMessage(
+                    error,
+                    "Email verification failed."
+                ),
+            });
+
             throw error;
         }
     },
 
+    // Log out the current student session.
     Logout: async () => {
+        set({
+            isLoading: true,
+            error: null,
+        });
+
         try {
-            const response = await axios.post(
-                `${API_URL}/logout`
-            );
+            const response = await API.post("/logout");
 
             set({
                 user: null,
                 isAuthenticated: false,
                 isLoading: false,
-                error: null
+                isCheckingAuth: false,
+                error: null,
             });
 
-            console.log("Logged Out Successfully");
-
             return response.data;
-
         } catch (error) {
-            console.log(
-                "Logout error:",
-                error.response?.data
-            );
+            set({
+                isLoading: false,
+                error: getErrorMessage(
+                    error,
+                    "Logout failed."
+                ),
+            });
 
             throw error;
         }
     },
 
+    // Request a password-reset code.
     ForgotPassword: async (email) => {
+        set({
+            isLoading: true,
+            error: null,
+        });
+
         try {
-            const response = await axios.patch(
-                `${API_URL}/forgot-password`,
-                {
-                    email
-                }
+            const response = await API.patch(
+                "/forgot-password",
+                { email }
             );
 
             set({
-                isLoading: false
+                isLoading: false,
+                error: null,
             });
 
             return response.data;
-
         } catch (error) {
-            console.log(error);
-        }
-    },
+            set({
+                isLoading: false,
+                error: getErrorMessage(
+                    error,
+                    "Failed to request a password reset."
+                ),
+            });
 
-    VerifyForgetPasswordCode: async (providedCodeValue) => {
-        try {
-            const response = await axios.patch(
-                `${API_URL}/verify-forgot-password`,
-                {
-                    providedCodeValue
-                }
-            );
-
-            return response.data;
-
-        } catch (error) {
-            console.log(error);
             throw error;
         }
     },
 
-    ResetPassword: async (
-        password,
-        confirmPassword
-    ) => {
+    // Verify the password-reset code.
+    VerifyForgetPasswordCode: async (providedCodeValue) => {
+        set({
+            isLoading: true,
+            error: null,
+        });
+
         try {
-            const response = await axios.patch(
-                `${API_URL}/reset-password`,
+            const response = await API.patch(
+                "/verify-forgot-password",
+                { providedCodeValue }
+            );
+
+            set({
+                isLoading: false,
+                error: null,
+            });
+
+            return response.data;
+        } catch (error) {
+            set({
+                isLoading: false,
+                error: getErrorMessage(
+                    error,
+                    "Password-reset code verification failed."
+                ),
+            });
+
+            throw error;
+        }
+    },
+
+    // Reset the password.
+    ResetPassword: async (password, confirmPassword) => {
+        set({
+            isLoading: true,
+            error: null,
+        });
+
+        try {
+            const response = await API.patch(
+                "/reset-password",
                 {
                     password,
-                    confirmPassword
+                    confirmPassword,
                 }
             );
 
             set({
-                isLoading: false
+                isLoading: false,
+                error: null,
             });
 
             return response.data;
-
         } catch (error) {
-            console.log(error);
+            set({
+                isLoading: false,
+                error: getErrorMessage(
+                    error,
+                    "Password reset failed."
+                ),
+            });
+
+            throw error;
         }
     },
 
-    ChangePassword: async (
-        oldPassword,
-        newPassword
-    ) => {
+    // Change the password of the logged-in student.
+    ChangePassword: async (oldPassword, newPassword) => {
+        set({
+            isLoading: true,
+            error: null,
+        });
+
         try {
-            const response = await axios.patch(
-                `${API_URL}/change-password`, 
+            const response = await API.patch(
+                "/change-password",
                 {
                     oldPassword,
-                    newPassword
+                    newPassword,
                 }
-            )
+            );
 
             set({
-                isLoaing: false
-            })
+                isLoading: false,
+                error: null,
+            });
 
             return response.data;
         } catch (error) {
-            console.log(error)
+            set({
+                isLoading: false,
+                error: getErrorMessage(
+                    error,
+                    "Changing the password failed."
+                ),
+            });
+
+            throw error;
         }
     },
-
 }));

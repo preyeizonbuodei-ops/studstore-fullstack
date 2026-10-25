@@ -3,7 +3,7 @@
 import axios from "axios";
 import { create } from "zustand";
 
-const API_URL = "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/users";
+const API_URL = "https://api.studstore.com.ng/api/v1/users";
 
 export const useContactFormStore = create((set) => ({
     loading: false,

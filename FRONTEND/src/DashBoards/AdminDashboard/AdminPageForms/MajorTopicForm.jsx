@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAdminMajorAreaTopicStore } from "../../UserDashboard/DepartmentStore/MajorTopicStore";
 
 
-const API_URL = "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/admin";
+const API_URL = "https://api.studstore.com.ng/api/v1/admin";
 
 const CreateMajorAreaTopic = () => {
     const {

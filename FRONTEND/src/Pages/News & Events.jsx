@@ -25,7 +25,7 @@ const News = () => {
             setError("");
 
             const response = await axios.get(
-                "https://studstore-fullstackstudstore-backend.onrender.com/api/v1/users/get-news"
+                "https://api.studstore.com.ng/api/v1/users/get-news"
             );
 
             if (response.data.success) {
