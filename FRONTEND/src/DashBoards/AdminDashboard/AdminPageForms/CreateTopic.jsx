@@ -139,9 +139,10 @@ const CreateTopicForm = () => {
 
         try {
             const response = await createTopic(courseId, {
-                TopicNumber: number,
-                title: title.trim(),
-            });
+            topicNumber: number,
+            TopicNumber: number,
+            title: title.trim(),
+        });
 
             if (response?.success === false) {
                 throw new Error(

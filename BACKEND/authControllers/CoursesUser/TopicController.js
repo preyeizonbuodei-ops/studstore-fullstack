@@ -1,5 +1,6 @@
+
 const ValidateTopic = require(
-  "../../middlewares/Admin/ValidateTopic"
+    "../../middlewares/Admin/ValidateTopic"
 );
 
 const Course = require(
@@ -14,20 +15,20 @@ const Topic = require(
     "../../modules/CourseModuels/TopicSchema"
 );
 
-
 // CREATE TOPIC
 exports.CreateTopic = async (req, res) => {
     try {
         const { courseId, title } = req.body;
 
-        // Support both frontend naming conventions.
-        const TopicNumber =
-            req.body.TopicNumber ?? req.body.topicNumber;
+        // Accept either frontend naming convention.
+        const topicNumber =
+            req.body.topicNumber ?? req.body.TopicNumber;
 
+        // ValidateTopic expects the lowercase field name.
         const { error, value } = ValidateTopic.validate({
             courseId,
             title,
-            TopicNumber,
+            topicNumber,
         });
 
         if (error) {
@@ -44,19 +45,20 @@ exports.CreateTopic = async (req, res) => {
         if (!existingCourse) {
             return res.status(404).json({
                 success: false,
-                message: "Course not found",
+                message: "Course not found.",
             });
         }
 
+        // Store TopicNumber using the existing MongoDB schema field.
         const topic = await Topic.create({
             courseId: value.courseId,
             title: value.title,
-            TopicNumber: value.TopicNumber,
+            TopicNumber: value.topicNumber,
         });
 
         return res.status(201).json({
             success: true,
-            message: "Topic created successfully",
+            message: "Topic created successfully.",
             topic,
         });
     } catch (error) {
@@ -64,11 +66,10 @@ exports.CreateTopic = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Server error while creating topic",
+            message: "Server error while creating topic.",
         });
     }
 };
-
 
 // GET ALL TOPICS
 exports.GetTopic = async (req, res) => {
@@ -86,30 +87,27 @@ exports.GetTopic = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Server error while fetching topics",
+            message: "Server error while fetching topics.",
         });
     }
 };
-
 
 // GET TOPICS BELONGING TO A COURSE
 exports.GetTopicByCourse = async (req, res) => {
     try {
         const { courseId } = req.params;
 
-        const existingCourse = await Course.findById(
-            courseId
-        );
+        const existingCourse = await Course.findById(courseId);
 
         if (!existingCourse) {
             return res.status(404).json({
                 success: false,
-                message: "Course not found",
+                message: "Course not found.",
             });
         }
 
         const topics = await Topic.find({
-            courseId,
+            courseId: existingCourse._id,
         }).sort({
             TopicNumber: 1,
         });
@@ -123,47 +121,44 @@ exports.GetTopicByCourse = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Server error while fetching topics",
+            message: "Server error while fetching topics.",
         });
     }
 };
-
 
 // UPDATE TOPIC
 exports.UpdateTopic = async (req, res) => {
     try {
         const { topicId } = req.params;
 
-        const existingTopic = await Topic.findById(
-            topicId
-        );
+        const existingTopic = await Topic.findById(topicId);
 
         if (!existingTopic) {
             return res.status(404).json({
                 success: false,
-                message: "Topic not found",
+                message: "Topic not found.",
             });
         }
 
-        // Preserve fields not included in the PATCH request.
+        // Preserve existing values for fields not included in PATCH.
+        // Normalize the topic number to the lowercase Joi field.
         const updatedData = {
             courseId:
                 req.body.courseId ??
-                existingTopic.courseId,
+                String(existingTopic.courseId),
 
             title:
                 req.body.title ??
                 existingTopic.title,
 
-            TopicNumber:
-                req.body.TopicNumber ??
+            topicNumber:
                 req.body.topicNumber ??
+                req.body.TopicNumber ??
                 existingTopic.TopicNumber,
         };
 
-        const { error, value } = ValidateTopic.validate(
-            updatedData
-        );
+        const { error, value } =
+            ValidateTopic.validate(updatedData);
 
         if (error) {
             return res.status(400).json({
@@ -179,21 +174,22 @@ exports.UpdateTopic = async (req, res) => {
         if (!existingCourse) {
             return res.status(404).json({
                 success: false,
-                message: "Course not found",
+                message: "Course not found.",
             });
         }
 
+        // Keep the schema's original uppercase field name.
         existingTopic.set({
             courseId: value.courseId,
             title: value.title,
-            TopicNumber: value.TopicNumber,
+            TopicNumber: value.topicNumber,
         });
 
         await existingTopic.save();
 
         return res.status(200).json({
             success: true,
-            message: "Topic updated successfully",
+            message: "Topic updated successfully.",
             topic: existingTopic,
         });
     } catch (error) {
@@ -201,30 +197,26 @@ exports.UpdateTopic = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Server error while updating topic",
+            message: "Server error while updating topic.",
         });
     }
 };
-
 
 // DELETE TOPIC
 exports.DeleteTopic = async (req, res) => {
     try {
         const { topicId } = req.params;
 
-        const existingTopic = await Topic.findById(
-            topicId
-        );
+        const existingTopic = await Topic.findById(topicId);
 
         if (!existingTopic) {
             return res.status(404).json({
                 success: false,
-                message: "Topic not found",
+                message: "Topic not found.",
             });
         }
 
-        // Lessons belong to topics through TopicId
-        // in your currently shared Lesson schema.
+        // Lessons reference their topic through TopicId.
         const existingLessons = await Lesson.exists({
             TopicId: existingTopic._id,
         });
@@ -241,22 +233,21 @@ exports.DeleteTopic = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Topic deleted successfully",
+            message: "Topic deleted successfully.",
         });
     } catch (error) {
         console.error("DELETE TOPIC ERROR:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Server error while deleting topic",
+            message: "Server error while deleting topic.",
         });
     }
 };
 
-
-
-// Keep this export only if your existing routes import GetCourses
-// from this controller. Otherwise, use your dedicated course controller.
+// GET COURSES
+// Keep this export if your existing routes import GetCourses
+// from this controller.
 exports.GetCourses = async (req, res) => {
     try {
         const courses = await Course.find().sort({
@@ -272,7 +263,7 @@ exports.GetCourses = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Server error while fetching courses",
+            message: "Server error while fetching courses.",
         });
     }
 };
