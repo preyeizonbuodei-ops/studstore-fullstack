@@ -7,6 +7,7 @@ import {
   Layers,
   Link as LinkIcon,
   Plus,
+  Trash2,
   Video,
 } from "lucide-react";
 
@@ -40,18 +41,42 @@ const getListFromResponse = (response, key) => {
 
 const splitLines = (value) =>
   value
-    .split("\n")
+    .split(/\r?\n/)
     .map((item) => item.trim())
     .filter(Boolean);
+
+const createEmptyMaterial = () => ({
+  title: "",
+  url: "",
+});
+
+const isValidWebUrl = (value) => {
+  try {
+    const parsedUrl = new URL(value);
+
+    return (
+      parsedUrl.protocol === "http:" ||
+      parsedUrl.protocol === "https:"
+    );
+  } catch {
+    return false;
+  }
+};
 
 const CreateLessonForm = () => {
   const location = useLocation();
 
-  const getCourses = createCourseStore((state) => state.getCourses);
+  const getCourses = createCourseStore(
+    (state) => state.getCourses
+  );
+
   const getTopicsByCourse = useTopicStore(
     (state) => state.getTopicsByCourse
   );
-  const createLesson = useLessonStore((state) => state.createLesson);
+
+  const createLesson = useLessonStore(
+    (state) => state.createLesson
+  );
 
   const initialCourseId =
     location.state?.courseId ||
@@ -64,8 +89,13 @@ const CreateLessonForm = () => {
   const [courses, setCourses] = useState([]);
   const [topics, setTopics] = useState([]);
 
-  const [courseId, setCourseId] = useState(initialCourseId || "");
-  const [topicId, setTopicId] = useState(initialTopicId || "");
+  const [courseId, setCourseId] = useState(
+    initialCourseId || ""
+  );
+
+  const [topicId, setTopicId] = useState(
+    initialTopicId || ""
+  );
 
   const [formData, setFormData] = useState({
     title: "",
@@ -73,7 +103,7 @@ const CreateLessonForm = () => {
     content: "",
     examples: "",
     videos: "",
-    materials: "",
+    materials: [createEmptyMaterial()],
     resources: "",
   });
 
@@ -94,9 +124,14 @@ const CreateLessonForm = () => {
 
       try {
         const response = await getCourses();
+
         if (cancelled) return;
 
-        const courseList = getListFromResponse(response, "courses");
+        const courseList = getListFromResponse(
+          response,
+          "courses"
+        );
+
         setCourses(courseList);
 
         setCourseId((currentId) => {
@@ -106,7 +141,8 @@ const CreateLessonForm = () => {
             preferredId &&
             courseList.some(
               (course) =>
-                String(getCourseId(course)) === String(preferredId)
+                String(getCourseId(course)) ===
+                String(preferredId)
             )
           ) {
             return String(preferredId);
@@ -157,9 +193,14 @@ const CreateLessonForm = () => {
 
       try {
         const response = await getTopicsByCourse(courseId);
+
         if (cancelled) return;
 
-        const topicList = getListFromResponse(response, "topics");
+        const topicList = getListFromResponse(
+          response,
+          "topics"
+        );
+
         setTopics(topicList);
 
         setTopicId((currentId) => {
@@ -169,7 +210,8 @@ const CreateLessonForm = () => {
             preferredId &&
             topicList.some(
               (topic) =>
-                String(getTopicId(topic)) === String(preferredId)
+                String(getTopicId(topic)) ===
+                String(preferredId)
             )
           ) {
             return String(preferredId);
@@ -186,6 +228,7 @@ const CreateLessonForm = () => {
 
           setTopics([]);
           setTopicId("");
+
           setServerError(
             error?.response?.data?.message ||
               "Unable to load topics for this course."
@@ -211,6 +254,54 @@ const CreateLessonForm = () => {
     setFormData((previous) => ({
       ...previous,
       [name]: value,
+    }));
+
+    setServerError("");
+    setSuccessMessage("");
+  };
+
+  // Update an individual study material.
+  const handleMaterialChange = (index, field, value) => {
+    setFormData((previous) => ({
+      ...previous,
+      materials: previous.materials.map((material, i) =>
+        i === index
+          ? {
+              ...material,
+              [field]: value,
+            }
+          : material
+      ),
+    }));
+
+    setServerError("");
+    setSuccessMessage("");
+  };
+
+  // Add another title and URL pair.
+  const handleAddMaterial = () => {
+    setFormData((previous) => ({
+      ...previous,
+      materials: [
+        ...previous.materials,
+        createEmptyMaterial(),
+      ],
+    }));
+
+    setServerError("");
+    setSuccessMessage("");
+  };
+
+  // Remove a material row without leaving the form empty.
+  const handleRemoveMaterial = (index) => {
+    setFormData((previous) => ({
+      ...previous,
+      materials:
+        previous.materials.length === 1
+          ? [createEmptyMaterial()]
+          : previous.materials.filter(
+              (_, i) => i !== index
+            ),
     }));
 
     setServerError("");
@@ -249,15 +340,99 @@ const CreateLessonForm = () => {
 
     const number = Number(formData.lessonNumber);
 
-    if (!Number.isInteger(number) || number < 1) {
-      setServerError("Enter a valid lesson number greater than zero.");
+    if (
+      !formData.lessonNumber.trim() ||
+      !Number.isInteger(number) ||
+      number < 1
+    ) {
+      setServerError(
+        "Enter a valid lesson number greater than zero."
+      );
+      return;
+    }
+
+    if (!formData.content.trim()) {
+      setServerError("Please enter the lesson notes.");
       return;
     }
 
     if (typeof createLesson !== "function") {
-      setServerError("The lesson creation function is unavailable.");
+      setServerError(
+        "The lesson creation function is unavailable."
+      );
       return;
     }
+
+    // Validate material title and URL pairs.
+    const enteredMaterials = formData.materials
+      .map((material) => ({
+        title: material.title.trim(),
+        url: material.url.trim(),
+      }))
+      .filter((material) => material.title || material.url);
+
+    for (let i = 0; i < enteredMaterials.length; i += 1) {
+      const material = enteredMaterials[i];
+
+      if (!material.title) {
+        setServerError(
+          `Please enter a title for Study Material ${i + 1}.`
+        );
+        return;
+      }
+
+      if (!material.url) {
+        setServerError(
+          `Please enter the file URL for "${material.title}".`
+        );
+        return;
+      }
+
+      if (!isValidWebUrl(material.url)) {
+        setServerError(
+          `Enter a valid HTTP or HTTPS URL for "${material.title}".`
+        );
+        return;
+      }
+    }
+
+    // Keep the user-friendly multiline video field,
+    // but submit videos in the object format required by Joi.
+    const videoUrls = splitLines(formData.videos);
+
+    for (const url of videoUrls) {
+      if (!isValidWebUrl(url)) {
+        setServerError(
+          `Invalid video URL: ${url}`
+        );
+        return;
+      }
+    }
+
+    const formattedVideos = videoUrls.map((url, index) => ({
+      title: `Video ${index + 1}`,
+      url,
+    }));
+
+    // Keep the multiline additional-resource field,
+    // and submit resources as title/URL objects.
+    const resourceUrls = splitLines(formData.resources);
+
+    for (const url of resourceUrls) {
+      if (!isValidWebUrl(url)) {
+        setServerError(
+          `Invalid additional resource URL: ${url}`
+        );
+        return;
+      }
+    }
+
+    const formattedResources = resourceUrls.map(
+      (url, index) => ({
+        title: `Resource ${index + 1}`,
+        url,
+      })
+    );
 
     const lessonData = {
       topicId,
@@ -265,9 +440,9 @@ const CreateLessonForm = () => {
       lessonNumber: number,
       content: formData.content.trim(),
       examples: formData.examples.trim(),
-      videos: splitLines(formData.videos),
-      materials: splitLines(formData.materials),
-      resources: splitLines(formData.resources),
+      videos: formattedVideos,
+      materials: enteredMaterials,
+      resources: formattedResources,
     };
 
     setSubmitting(true);
@@ -276,7 +451,9 @@ const CreateLessonForm = () => {
       const response = await createLesson(lessonData);
 
       if (response?.success === false) {
-        throw new Error(response.message || "Unable to create lesson.");
+        throw new Error(
+          response.message || "Unable to create lesson."
+        );
       }
 
       setSuccessMessage(
@@ -289,7 +466,7 @@ const CreateLessonForm = () => {
         content: "",
         examples: "",
         videos: "",
-        materials: "",
+        materials: [createEmptyMaterial()],
         resources: "",
       });
     } catch (error) {
@@ -309,11 +486,13 @@ const CreateLessonForm = () => {
   };
 
   const selectedCourse = courses.find(
-    (course) => String(getCourseId(course)) === String(courseId)
+    (course) =>
+      String(getCourseId(course)) === String(courseId)
   );
 
   const selectedTopic = topics.find(
-    (topic) => String(getTopicId(topic)) === String(topicId)
+    (topic) =>
+      String(getTopicId(topic)) === String(topicId)
   );
 
   return (
@@ -340,6 +519,7 @@ const CreateLessonForm = () => {
               <h1 className="text-2xl font-bold text-blue-950 sm:text-3xl">
                 Create Lesson
               </h1>
+
               <p className="mt-1 text-sm text-gray-500">
                 Add a lesson under a topic in a course.
               </p>
@@ -389,7 +569,9 @@ const CreateLessonForm = () => {
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-blue-950 focus:bg-white disabled:opacity-60"
               >
                 <option value="">
-                  {loadingCourses ? "Loading courses..." : "Select a course"}
+                  {loadingCourses
+                    ? "Loading courses..."
+                    : "Select a course"}
                 </option>
 
                 {courses.map((course) => (
@@ -397,9 +579,12 @@ const CreateLessonForm = () => {
                     key={getCourseId(course)}
                     value={getCourseId(course)}
                   >
-                    {course.courseCode || course.code || "Course"}{" "}
+                    {course.courseCode || course.code || "Course"}
                     {" — "}
-                    {course.courseTitle || course.title || course.name || ""}
+                    {course.courseTitle ||
+                      course.title ||
+                      course.name ||
+                      ""}
                   </option>
                 ))}
               </select>
@@ -454,7 +639,9 @@ const CreateLessonForm = () => {
                     key={getTopicId(topic)}
                     value={getTopicId(topic)}
                   >
-                    {topic.TopicNumber ?? topic.topicNumber ?? ""}{" "}
+                    {topic.TopicNumber ??
+                      topic.topicNumber ??
+                      ""}{" "}
                     {topic.title || topic.name || "Untitled Topic"}
                   </option>
                 ))}
@@ -541,6 +728,7 @@ const CreateLessonForm = () => {
               value={formData.content}
               onChange={handleChange}
               placeholder="Enter the lesson notes..."
+              required
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-950 focus:bg-white"
             />
           </div>
@@ -584,33 +772,125 @@ const CreateLessonForm = () => {
               placeholder="Paste video links, one per line"
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-950 focus:bg-white"
             />
+
             <p className="mt-1 text-xs text-gray-500">
-              Add one video URL per line.
+              Add one video URL per line. Video titles are generated
+              automatically.
             </p>
           </div>
 
           {/* Study materials */}
           <div className="mb-6">
-            <label
-              htmlFor="materials"
-              className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700"
-            >
-              <FileText size={17} />
-              Study Materials
-            </label>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <FileText size={17} />
+                Study Materials
+              </label>
 
-            <textarea
-              id="materials"
-              name="materials"
-              rows={3}
-              value={formData.materials}
-              onChange={handleChange}
-              placeholder="Paste direct PDF or document links, one per line"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-950 focus:bg-white"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Use direct links to files students can open and read.
+              <span className="text-xs text-gray-500">
+                {formData.materials.length}{" "}
+                {formData.materials.length === 1
+                  ? "material field"
+                  : "material fields"}
+              </span>
+            </div>
+
+            <p className="mb-4 text-sm text-gray-500">
+              Give each material a clear title, then paste its direct
+              PDF or document URL underneath.
             </p>
+
+            <div className="space-y-4">
+              {formData.materials.map((material, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-gray-200 bg-gray-50 p-4"
+                >
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-blue-950">
+                      Study Material {index + 1}
+                    </h3>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMaterial(index)}
+                      disabled={submitting}
+                      aria-label={`Remove study material ${index + 1}`}
+                      title="Remove material"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <Trash2 size={15} />
+                      Remove
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <label
+                      htmlFor={`material-title-${index}`}
+                      className="mb-2 block text-sm font-medium text-gray-700"
+                    >
+                      Material Title
+                    </label>
+
+                    <input
+                      id={`material-title-${index}`}
+                      type="text"
+                      value={material.title}
+                      onChange={(event) =>
+                        handleMaterialChange(
+                          index,
+                          "title",
+                          event.target.value
+                        )
+                      }
+                      disabled={submitting}
+                      placeholder="PHY 101 — Physical Quantities and Measurements"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-950"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor={`material-url-${index}`}
+                      className="mb-2 block text-sm font-medium text-gray-700"
+                    >
+                      PDF or Document URL
+                    </label>
+
+                    <input
+                      id={`material-url-${index}`}
+                      type="url"
+                      value={material.url}
+                      onChange={(event) =>
+                        handleMaterialChange(
+                          index,
+                          "url",
+                          event.target.value
+                        )
+                      }
+                      disabled={submitting}
+                      placeholder="https://example.com/physics-lecture-note.pdf"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-950"
+                    />
+
+                    <p className="mt-2 text-xs text-gray-500">
+                      Use a link students can open to read the study
+                      material.
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAddMaterial}
+              disabled={submitting}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-blue-950 px-4 py-2.5 text-sm font-semibold text-blue-950 transition hover:bg-blue-50 disabled:opacity-50"
+            >
+              <Plus size={17} />
+              Add Another Study Material
+            </button>
           </div>
 
           {/* Additional resources */}
@@ -632,6 +912,11 @@ const CreateLessonForm = () => {
               placeholder="Paste additional resource links, one per line"
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-950 focus:bg-white"
             />
+
+            <p className="mt-1 text-xs text-gray-500">
+              Add one URL per line. Resource titles are generated
+              automatically.
+            </p>
           </div>
 
           <div className="flex justify-end">

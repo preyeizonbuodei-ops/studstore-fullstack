@@ -10,11 +10,66 @@ const Lesson = require(
     "../../modules/CourseModuels/LessonSchema"
 );
 
+// Convert plain URLs into the object format required by Joi and Mongoose.
+// Accepts a newline-separated string, an array of URLs, or an array of objects.
+const normalizeLinkItems = (items, label) => {
+    if (
+        items === undefined ||
+        items === null ||
+        items === ""
+    ) {
+        return [];
+    }
+
+    const list = Array.isArray(items)
+        ? items
+        : typeof items === "string"
+            ? items.split(/\r?\n/)
+            : [items];
+
+    return list
+        .map((item, index) => {
+            if (typeof item === "string") {
+                const url = item.trim();
+
+                if (!url) {
+                    return null;
+                }
+
+                return {
+                    title: `${label} ${index + 1}`,
+                    url,
+                };
+            }
+
+            if (
+                item &&
+                typeof item === "object" &&
+                !Array.isArray(item)
+            ) {
+                return {
+                    title:
+                        typeof item.title === "string" &&
+                        item.title.trim()
+                            ? item.title.trim()
+                            : `${label} ${index + 1}`,
+                    url:
+                        typeof item.url === "string"
+                            ? item.url.trim()
+                            : item.url,
+                };
+            }
+
+            // Preserve invalid values so Joi can report validation errors.
+            return item;
+        })
+        .filter((item) => item !== null);
+};
+
 
 // CREATE LESSON INSIDE A TOPIC
 exports.CreateLesson = async (req, res) => {
     try {
-        // Accept the topic ID from either the route or request body.
         const topicId =
             req.params.topicId ||
             req.params.TopicId ||
@@ -25,14 +80,27 @@ exports.CreateLesson = async (req, res) => {
             title,
             content,
             examples,
-            videos,
-            materials,
-            resources,
         } = req.body;
 
         const lessonNumber =
             req.body.lessonNumber ??
             req.body.LessonNumber;
+
+        // Convert URL strings into { title, url } objects before validation.
+        const videos = normalizeLinkItems(
+            req.body.videos,
+            "Video"
+        );
+
+        const materials = normalizeLinkItems(
+            req.body.materials,
+            "Study Material"
+        );
+
+        const resources = normalizeLinkItems(
+            req.body.resources,
+            "Resource"
+        );
 
         const { error, value } = ValidateLesson.validate({
             topicId,
@@ -63,8 +131,7 @@ exports.CreateLesson = async (req, res) => {
             });
         }
 
-        // Map lowercase request fields to your current
-        // Mongoose schema field names.
+        // Map request fields to the existing Mongoose schema.
         const lesson = await Lesson.create({
             TopicId: value.topicId,
             LessonNumber: value.lessonNumber,
@@ -93,7 +160,6 @@ exports.CreateLesson = async (req, res) => {
 
 
 // GET ALL LESSONS
-// Useful for admin pages that need to find a lesson by ID.
 exports.GetLessons = async (req, res) => {
     try {
         const lessons = await Lesson.find().sort({
@@ -180,8 +246,23 @@ exports.UpdateLesson = async (req, res) => {
             });
         }
 
-        // Construct the complete validated data using existing
-        // values for any fields omitted from a PATCH request.
+        // Normalize incoming links and preserve existing values
+        // when a PATCH request omits these fields.
+        const videos = normalizeLinkItems(
+            req.body.videos ?? existingLesson.videos,
+            "Video"
+        );
+
+        const materials = normalizeLinkItems(
+            req.body.materials ?? existingLesson.materials,
+            "Study Material"
+        );
+
+        const resources = normalizeLinkItems(
+            req.body.resources ?? existingLesson.resources,
+            "Resource"
+        );
+
         const updatedData = {
             topicId:
                 req.body.topicId ??
@@ -206,20 +287,9 @@ exports.UpdateLesson = async (req, res) => {
                 existingLesson.examples ??
                 "",
 
-            videos:
-                req.body.videos ??
-                existingLesson.videos ??
-                [],
-
-            materials:
-                req.body.materials ??
-                existingLesson.materials ??
-                [],
-
-            resources:
-                req.body.resources ??
-                existingLesson.resources ??
-                [],
+            videos,
+            materials,
+            resources,
         };
 
         const { error, value } = ValidateLesson.validate(
@@ -244,16 +314,15 @@ exports.UpdateLesson = async (req, res) => {
             });
         }
 
-        // Preserve the current database schema's field names.
         existingLesson.set({
             TopicId: value.topicId,
             LessonNumber: value.lessonNumber,
             title: value.title,
             content: value.content,
             examples: value.examples,
-            videos: value.videos,
-            materials: value.materials,
-            resources: value.resources,
+            videos: value.videos ?? [],
+            materials: value.materials ?? [],
+            resources: value.resources ?? [],
         });
 
         await existingLesson.save();
