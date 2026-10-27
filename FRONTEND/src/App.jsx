@@ -11,6 +11,7 @@ import Research from "./Pages/Research";
 import Resources from "./Pages/Resources";
 import News from "./Pages/News & Events";
 import Contact from "./Pages/Contact";
+import StudentVoices from "./Pages/StudentVoices";
 
 import UserRegister from "./Pages/UserRegister";
 import Login from "./Pages/Login";
@@ -20,6 +21,7 @@ import ForgetPasswordVerification from "./Pages/ForgetPassword";
 import ForgetPasswordSend from "./Pages/ForgetPasswordSend";
 import ResetPassword from "./Pages/ResetPassword";
 import StudStoreAi from "./StudStoreAi";
+
 
 // ADMIN
 import AdminSidebar from "./DashBoards/AdminDashboard/AdminPages/AdminSidebar";
@@ -49,6 +51,7 @@ import LessonDetailsPage from "./DashBoards/UserDashboard/UserPages/Component/Le
 import Materials from "./DashBoards/UserDashboard/UserPages/Component/ResourcesPage";
 import Profile from "./DashBoards/UserDashboard/UserPages/Component/Profile";
 import Settings from "./DashBoards/UserDashboard/UserPages/Component/Settings";
+
 
 import AdminCreateMajorArea from "./DashBoards/AdminDashboard/AdminPageForms/CreateMajorAreaForm";
 import CreateMajorAreaTopic from "./DashBoards/AdminDashboard/AdminPageForms/MajorTopicForm";
@@ -385,6 +388,11 @@ function App() {
                         <Route
                             path="/me/setting"
                             element={<Settings />}
+                        />
+
+                        <Route
+                            path="/me/student-voices"
+                            element={<StudentVoices />}
                         />
 
                         <Route

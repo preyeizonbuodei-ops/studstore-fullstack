@@ -25,9 +25,13 @@ const { createResearchPaper } = require("../authControllers/Admin/DepartmentCont
 const { getAdminDashboardStats } = require("../authControllers/Admin/GetAdminStatController");
 const { getAllUsers, updateUser, deleteUser } = require("../authControllers/register");
 const { CreateLimiter, AuthLimiter } = require("../middlewares/RateLimit");
+const { GetAllComments, GetOneComment, DeleteComment} = require("../authControllers/commentController");
 
 const adminRouter = express.Router();
 
+adminRouter.get('/comments', ValidateAdminToken, authorizedAdminRoles("Admin"), GetAllComments)
+adminRouter.get('/comments/:id', ValidateAdminToken, authorizedAdminRoles("Admin"), GetOneComment)
+adminRouter.delete('/comments/:id', ValidateAdminToken, authorizedAdminRoles("Admin"), DeleteComment)
 
 adminRouter.get('/dashboard-stats', ValidateAdminToken, authorizedAdminRoles("Admin"), getAdminDashboardStats)
 adminRouter.get('/get-all-users', ValidateAdminToken, authorizedAdminRoles("Admin"), getAllUsers)

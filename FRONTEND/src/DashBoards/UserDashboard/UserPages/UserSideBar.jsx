@@ -7,13 +7,16 @@ import {
     Settings,
     User,
     Book,
-    House,
-    ChartBarIncreasing,
     Menu,
     X,
-    Boxes
+    Boxes,
+    MessagesSquare,
 } from "lucide-react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import {
+    NavLink,
+    useLocation,
+    useNavigate,
+} from "react-router-dom";
 
 const UserSideBar = ({ isOpen, setIsOpen }) => {
     const Logout = useAuthStore((state) => state.Logout);
@@ -29,11 +32,20 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
         setIsOpen(false);
     };
 
+    const linkClass = ({ isActive }) =>
+        `flex items-center gap-3 rounded px-3 py-3 transition duration-300 ${
+            isActive
+                ? "bg-white text-black"
+                : "hover:bg-white hover:text-black"
+        }`;
+
     return (
         <>
             {/* Mobile Menu Button */}
             <button
+                type="button"
                 onClick={() => setIsOpen(true)}
+                aria-label="Open navigation menu"
                 className="fixed left-4 top-4 z-40 rounded-lg bg-blue-950 p-3 text-white shadow-lg lg:hidden"
             >
                 <Menu size={24} />
@@ -43,6 +55,7 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
             {isOpen && (
                 <div
                     onClick={() => setIsOpen(false)}
+                    aria-hidden="true"
                     className="fixed inset-0 z-40 bg-black/50 lg:hidden"
                 />
             )}
@@ -53,10 +66,8 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
                     isOpen ? "translate-x-0" : "-translate-x-full"
                 }`}
             >
-
                 {/* Header */}
                 <div className="mb-3 flex items-center justify-between gap-3 p-3 shadow-[0_2px_12px_rgba(0,0,0,0.20)]">
-
                     <div className="flex items-center gap-3">
                         <GraduationCap className="size-10 text-blue-500" />
 
@@ -73,48 +84,36 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
 
                     {/* Mobile Close Button */}
                     <button
+                        type="button"
                         onClick={() => setIsOpen(false)}
+                        aria-label="Close navigation menu"
                         className="rounded-lg p-2 hover:bg-white/10 lg:hidden"
                     >
                         <X size={22} />
                     </button>
-
                 </div>
 
                 <div className="flex flex-col gap-2 px-3">
-
-                    {/* Dashboard */}
+                    {/* Home Page */}
                     <NavLink
                         to="/"
                         end
                         onClick={handleNavigation}
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 rounded py-3 px-3 transition duration-500 ${
-                                isActive
-                                    ? "bg-white text-black"
-                                    : "hover:bg-white hover:text-black"
-                            }`
-                        }
+                        className={linkClass}
                     >
-                        <Home />
-                        <h1>Home page</h1>
+                        <Home size={20} />
+                        <span>Home page</span>
                     </NavLink>
 
-
+                    {/* Dashboard */}
                     <NavLink
                         to="/me"
                         end
                         onClick={handleNavigation}
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 rounded py-3 px-3 transition duration-500 ${
-                                isActive
-                                    ? "bg-white text-black"
-                                    : "hover:bg-white hover:text-black"
-                            }`
-                        }
+                        className={linkClass}
                     >
-                        <Boxes />
-                        <h1>Dashboard</h1>
+                        <Boxes size={20} />
+                        <span>Dashboard</span>
                     </NavLink>
 
                     {/* My Courses */}
@@ -122,84 +121,73 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
                         to="/me/courses"
                         onClick={handleNavigation}
                         className={() =>
-                            `flex items-center gap-3 rounded py-3 px-3 transition duration-500 ${
+                            `flex items-center gap-3 rounded px-3 py-3 transition duration-300 ${
                                 isCoursesActive
                                     ? "bg-white text-black"
                                     : "hover:bg-white hover:text-black"
                             }`
                         }
                     >
-                        <Book />
-                        <h1>My Courses</h1>
+                        <Book size={20} />
+                        <span>My Courses</span>
                     </NavLink>
 
                     {/* Learning Materials */}
                     <NavLink
                         to="/me/learning-materials"
                         onClick={handleNavigation}
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 rounded py-3 px-3 transition duration-500 ${
-                                isActive
-                                    ? "bg-white text-black"
-                                    : "hover:bg-white hover:text-black"
-                            }`
-                        }
+                        className={linkClass}
                     >
-                        <File />
-                        <h1>Learning Materials</h1>
+                        <File size={20} />
+                        <span>Learning Materials</span>
                     </NavLink>
-
-                    {/* Department */}
-
-
-                    {/* Resources */}
-                    
 
                     {/* Profile */}
                     <NavLink
                         to="/me/profile"
                         onClick={handleNavigation}
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 rounded py-3 px-3 transition duration-500 ${
-                                isActive
-                                    ? "bg-white text-black"
-                                    : "hover:bg-white hover:text-black"
-                            }`
-                        }
+                        className={linkClass}
                     >
-                        <User />
-                        <h1>Profile</h1>
+                        <User size={20} />
+                        <span>Profile</span>
+                    </NavLink>
+
+                    {/* Student Voices */}
+                    <NavLink
+                        to="/me/student-voices"
+                        onClick={handleNavigation}
+                        className={linkClass}
+                    >
+                        <MessagesSquare size={20} />
+                        <span>Student Voices</span>
                     </NavLink>
 
                     {/* Settings */}
                     <NavLink
                         to="/me/setting"
                         onClick={handleNavigation}
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 rounded py-3 px-3 transition duration-500 ${
-                                isActive
-                                    ? "bg-white text-black"
-                                    : "hover:bg-white hover:text-black"
-                            }`
-                        }
+                        className={linkClass}
                     >
-                        <Settings />
-                        <h1>Setting</h1>
+                        <Settings size={20} />
+                        <span>Settings</span>
                     </NavLink>
 
                     {/* Logout */}
                     <button
-                        className="flex gap-2 rounded py-3 px-3 hover:bg-white hover:text-black"
+                        type="button"
+                        className="flex items-center gap-3 rounded px-3 py-3 transition duration-300 hover:bg-white hover:text-black"
                         onClick={async () => {
-                            await Logout();
-                            setIsOpen(false);
-                            navigate("/login");
+                            try {
+                                await Logout();
+                            } finally {
+                                setIsOpen(false);
+                                navigate("/login");
+                            }
                         }}
                     >
-                        <LogOutIcon />
-                        Logout
+                        <LogOutIcon size={20} />
+                        <span>Logout</span>
                     </button>
-
                 </div>
             </aside>
         </>

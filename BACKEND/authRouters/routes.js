@@ -2,7 +2,7 @@ const express = require("express");
 
 const { Register, Login, Logout, verifyVerificationCode, ChangePassword, ForgotPasswordEmail, VerifyForgotPasswordCode, ResetPassword, getRefreshToken } = require("../authControllers/register");
 const { ValidateToken } = require("../middlewares/validateToken");
-const { CreateComment, GetAllComments, GetOneCommnet, UpdateComment, DeleteComment} = require("../authControllers/commentController");
+const { CreateComment, GetAllComments, GetOneComment, UpdateComment, DeleteComment} = require("../authControllers/commentController");
 const { ConnectNews } = require("../authControllers/NewsController");
 const { GetCourses, GetCourseById } = require("../authControllers/CoursesUser/GetCourses");
 const { GetCurrentUser } = require("../authControllers/GetCurrentUser");
@@ -91,11 +91,11 @@ router.get("/get-all-research-papers", ValidateToken, authorizedUserRoles("Stude
 router.get("/get-all-research/:researchPaper", ValidateToken, authorizedUserRoles("Student"), getResearchPaperById);
 // comment routes
 
-router.post("/comment", ValidateToken, authorizedUserRoles("Student"), CreateComment);
-router.get("/all-comment", ValidateToken, authorizedUserRoles("Student"), GetAllComments);
-router.get("/get-one-commnet/:id", ValidateToken, authorizedUserRoles("Student"), GetOneCommnet);
+router.post( "/comment",ValidateToken, authorizedUserRoles("Student"), CreateComment);
+router.get( "/all-comment", ValidateToken, authorizedUserRoles("Student"), GetAllComments);
+router.get( "/get-one-comment/:id", ValidateToken, authorizedUserRoles("Student"), GetOneComment);
 router.put("/update-comment/:id", ValidateToken, authorizedUserRoles("Student"), UpdateComment);
-router.delete("/delete-comment/:id", ValidateToken, authorizedUserRoles("Student"), DeleteComment);
+router.delete( "/delete-comment/:id", ValidateToken, authorizedUserRoles("Student"), DeleteComment);
 
 router.get("/get-news", ConnectNews);
 router.post("/send-email", ValidateToken, authorizedUserRoles("Student"), ContactFormController);
