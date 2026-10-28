@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
@@ -15,11 +14,16 @@ import {
     Search,
     RefreshCw,
     GraduationCap,
+    MessageSquareText,
+    MessageCircle,
+    ArrowRight,
+    LoaderCircle,
 } from "lucide-react";
 
 import createCourseStore from "../../UserDashboard/CourseStore/CourseStore";
 import useLessonStore from "../../UserDashboard/CourseStore/CreateLessonStore";
 import useTopicStore from "../../UserDashboard/CourseStore/AdminTopicStore";
+import useAdminCommentStore from "../../../Store/AdminCommentStore";
 
 const COURSE_ROUTES = {
     addCourse: "/admin/create-course",
@@ -29,6 +33,8 @@ const COURSE_ROUTES = {
     addTopic: "/admin/create-topic",
     editTopic: "/admin/edit-topic",
 };
+
+const ADMIN_COMMENTS_ROUTE = "/admin-dashboard/comments";
 
 const courseCategories = [
     { id: "general", label: "General Courses", icon: GraduationCap },
@@ -68,19 +74,95 @@ const getListFromResponse = (response, keys = []) => {
     return [];
 };
 
+// Get the author's display name from a populated comment.
+const getCommentAuthorName = (comment) => {
+    const author = comment?.username;
+
+    if (!author || typeof author !== "object") {
+        return "StudStore Student";
+    }
+
+    const fullName = [
+        author.firstName,
+        author.lastName,
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+    return (
+        author.displayName ||
+        author.fullName ||
+        author.name ||
+        fullName ||
+        author.username ||
+        "StudStore Student"
+    );
+};
+
+// Format comment dates for the dashboard preview.
+const formatCommentDate = (date) => {
+    if (!date) return "";
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+        return "";
+    }
+
+    return parsedDate.toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    });
+};
+
+// Generate author initials.
+const getCommentInitials = (name) =>
+    name
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() || "")
+        .join("");
+
 const AdminMainContent = () => {
+    // Course stores.
     const getCourses = createCourseStore((state) => state.getCourses);
     const deleteCourse = createCourseStore((state) => state.deleteCourse);
 
     const getTopicsByCourse = useTopicStore(
         (state) => state.getTopicsByCourse
     );
-    const deleteTopic = useTopicStore((state) => state.deleteTopic);
+
+    const deleteTopic = useTopicStore(
+        (state) => state.deleteTopic
+    );
 
     const getLessonsByTopic = useLessonStore(
         (state) => state.getLessonsByTopic
     );
-    const deleteLesson = useLessonStore((state) => state.deleteLesson);
+
+    const deleteLesson = useLessonStore(
+        (state) => state.deleteLesson
+    );
+
+    // Admin comment store.
+    const getAllAdminComments = useAdminCommentStore(
+        (state) => state.getAllComments
+    );
+
+    const adminComments = useAdminCommentStore(
+        (state) => state.comments
+    );
+
+    const commentsLoading = useAdminCommentStore(
+        (state) => state.loading
+    );
+
+    const commentsError = useAdminCommentStore(
+        (state) => state.error
+    );
 
     const [courses, setCourses] = useState([]);
     const [topics, setTopics] = useState([]);
@@ -121,6 +203,7 @@ const AdminMainContent = () => {
             });
         } catch (error) {
             console.error("LOAD COURSES ERROR:", error);
+
             setErrorMessage(
                 error?.response?.data?.message ||
                     "Unable to load courses."
@@ -133,6 +216,19 @@ const AdminMainContent = () => {
     useEffect(() => {
         loadCourses();
     }, [loadCourses]);
+
+    // Load the four newest comments for the dashboard preview.
+    useEffect(() => {
+        getAllAdminComments({
+            page: 1,
+            limit: 4,
+        }).catch((error) => {
+            console.error("LOAD RECENT COMMENTS ERROR:", error);
+        });
+    }, [getAllAdminComments]);
+
+    // Only display four comments in the dashboard preview.
+    const recentAdminComments = adminComments.slice(0, 4);
 
     // Search and filter courses.
     const filteredCourses = useMemo(() => {
@@ -213,6 +309,7 @@ const AdminMainContent = () => {
                 console.error("LOAD TOPICS ERROR:", error);
 
                 setTopics([]);
+
                 setErrorMessage(
                     error?.response?.data?.message ||
                         "Unable to load topics for this course."
@@ -434,7 +531,7 @@ const AdminMainContent = () => {
                     </NavLink>
                 </div>
 
-                {/* Error message */}
+                {/* Course error message */}
                 {errorMessage && (
                     <div
                         role="alert"
@@ -462,6 +559,7 @@ const AdminMainContent = () => {
                             </span>
                             <BookOpen className="text-blue-600" size={21} />
                         </div>
+
                         <p className="text-2xl font-bold text-gray-900">
                             {courses.length}
                         </p>
@@ -474,6 +572,7 @@ const AdminMainContent = () => {
                             </span>
                             <Layers className="text-purple-600" size={21} />
                         </div>
+
                         <p className="text-2xl font-bold text-gray-900">
                             {topics.length}
                         </p>
@@ -486,18 +585,187 @@ const AdminMainContent = () => {
                             </span>
                             <FileText className="text-emerald-600" size={21} />
                         </div>
+
                         <p className="text-2xl font-bold text-gray-900">
                             {totalLessonsLoaded}
                         </p>
                     </div>
                 </div>
 
+                {/* Recent Student Comments */}
+                <section className="mb-6 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+                    <div className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                                <MessageSquareText size={22} />
+                            </div>
+
+                            <div>
+                                <h2 className="font-bold text-gray-900">
+                                    Recent Student Comments
+                                </h2>
+
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Review student feedback and respond to comments.
+                                </p>
+                            </div>
+                        </div>
+
+                        <NavLink
+                            to={ADMIN_COMMENTS_ROUTE}
+                            className="inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
+                        >
+                            See more comments
+                            <ArrowRight size={16} />
+                        </NavLink>
+                    </div>
+
+                    <div className="p-4 sm:p-5">
+                        {commentsLoading && recentAdminComments.length === 0 ? (
+                            <div className="flex items-center justify-center gap-3 py-8 text-sm text-gray-500">
+                                <LoaderCircle
+                                    size={20}
+                                    className="animate-spin text-blue-600"
+                                />
+                                Loading recent comments...
+                            </div>
+                        ) : commentsError && recentAdminComments.length === 0 ? (
+                            <div
+                                role="alert"
+                                className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+                            >
+                                <p>{commentsError}</p>
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        getAllAdminComments({
+                                            page: 1,
+                                            limit: 4,
+                                        }).catch(() => {})
+                                    }
+                                    className="mt-2 inline-flex items-center gap-2 font-semibold"
+                                >
+                                    <RefreshCw size={14} />
+                                    Try again
+                                </button>
+                            </div>
+                        ) : recentAdminComments.length === 0 ? (
+                            <div className="rounded-lg border border-dashed border-gray-200 px-4 py-10 text-center">
+                                <MessageCircle
+                                    size={30}
+                                    className="mx-auto mb-3 text-gray-300"
+                                />
+
+                                <p className="text-sm font-semibold text-gray-700">
+                                    No student comments yet
+                                </p>
+
+                                <p className="mt-1 text-sm text-gray-500">
+                                    New student feedback will appear here.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {recentAdminComments.map((comment) => {
+                                    const commentId = comment._id;
+                                    const authorName =
+                                        getCommentAuthorName(comment);
+
+                                    const replyCount = Array.isArray(
+                                        comment.replies
+                                    )
+                                        ? comment.replies.length
+                                        : 0;
+
+                                    return (
+                                        <article
+                                            key={commentId}
+                                            className="rounded-xl border border-gray-100 p-4 transition hover:border-blue-100 hover:bg-gray-50/70"
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-700">
+                                                    {getCommentInitials(
+                                                        authorName
+                                                    )}
+                                                </div>
+
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                        <h3 className="text-sm font-semibold text-gray-900">
+                                                            {authorName}
+                                                        </h3>
+
+                                                        {comment.createdAt && (
+                                                            <span className="text-xs text-gray-400">
+                                                                {formatCommentDate(
+                                                                    comment.createdAt
+                                                                )}
+                                                            </span>
+                                                        )}
+
+                                                        {comment.isDeleted && (
+                                                            <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-medium text-red-700">
+                                                                Removed
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <p
+                                                        className={`mt-2 whitespace-pre-wrap break-words text-sm leading-6 ${
+                                                            comment.isDeleted
+                                                                ? "italic text-gray-400"
+                                                                : "text-gray-700"
+                                                        }`}
+                                                    >
+                                                        {comment.comment}
+                                                    </p>
+
+                                                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                                                        <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                                                            <MessageCircle size={14} />
+                                                            {replyCount}{" "}
+                                                            {replyCount === 1
+                                                                ? "reply"
+                                                                : "replies"}
+                                                        </span>
+
+                                                        <NavLink
+                                                            to={ADMIN_COMMENTS_ROUTE}
+                                                            className="text-xs font-semibold text-blue-600 transition hover:text-blue-800"
+                                                        >
+                                                            {comment.isDeleted
+                                                                ? "View discussion"
+                                                                : "View and manage"}
+                                                        </NavLink>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {recentAdminComments.length > 0 && (
+                            <div className="mt-4 flex justify-center border-t border-gray-100 pt-4">
+                                <NavLink
+                                    to={ADMIN_COMMENTS_ROUTE}
+                                    className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-800"
+                                >
+                                    See all student comments
+                                    <ArrowRight size={16} />
+                                </NavLink>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
                 {/* Course category filters */}
                 <div className="mb-6 flex flex-wrap gap-2">
                     {courseCategories.map((category) => {
                         const Icon = category.icon;
-                        const active =
-                            activeCategory === category.id;
+                        const active = activeCategory === category.id;
 
                         return (
                             <button
@@ -528,6 +796,7 @@ const AdminMainContent = () => {
                                 <h2 className="font-bold text-gray-900">
                                     Courses
                                 </h2>
+
                                 <p className="mt-1 text-xs text-gray-400">
                                     Select a course to manage its content
                                 </p>
@@ -566,9 +835,11 @@ const AdminMainContent = () => {
                                     size={25}
                                     className="mx-auto mb-2 text-gray-300"
                                 />
+
                                 <p className="text-sm text-gray-500">
                                     No courses in this category.
                                 </p>
+
                                 <NavLink
                                     to={COURSE_ROUTES.addCourse}
                                     className="mt-3 inline-block text-xs font-medium text-blue-600"
@@ -642,9 +913,11 @@ const AdminMainContent = () => {
                                     size={36}
                                     className="mx-auto mb-3 text-gray-300"
                                 />
+
                                 <h2 className="font-semibold text-gray-800">
                                     Select a course
                                 </h2>
+
                                 <p className="mt-1 text-sm text-gray-500">
                                     Choose a course from the list to view its topics and lessons.
                                 </p>
@@ -663,6 +936,7 @@ const AdminMainContent = () => {
                                                 <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
                                                     {selectedCourse.courseCode}
                                                 </span>
+
                                                 <span className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-600">
                                                     {getCourseLabel(selectedCourse)}
                                                 </span>
@@ -731,6 +1005,7 @@ const AdminMainContent = () => {
                                             <h2 className="text-lg font-bold text-gray-900">
                                                 Topics
                                             </h2>
+
                                             <p className="mt-1 text-xs text-gray-400">
                                                 Topics are managed at the course level. Add topics here, then expand a topic to manage its lessons.
                                             </p>
@@ -759,9 +1034,11 @@ const AdminMainContent = () => {
                                                 size={30}
                                                 className="mx-auto mb-3 text-gray-300"
                                             />
+
                                             <p className="text-sm font-medium text-gray-700">
                                                 No topics yet
                                             </p>
+
                                             <p className="mt-1 text-xs text-gray-400">
                                                 Add the first topic for this course.
                                             </p>
@@ -775,6 +1052,7 @@ const AdminMainContent = () => {
                                                 );
                                                 const topicLessons =
                                                     lessonsByTopic[topicId] || [];
+
                                                 const lessonsLoaded =
                                                     Object.prototype.hasOwnProperty.call(
                                                         lessonsByTopic,
@@ -807,11 +1085,16 @@ const AdminMainContent = () => {
 
                                                                 <div className="min-w-0 flex-1">
                                                                     <p className="text-xs text-gray-400">
-                                                                        Topic {getTopicNumber(topic)}
+                                                                        Topic{" "}
+                                                                        {getTopicNumber(
+                                                                            topic
+                                                                        )}
                                                                     </p>
+
                                                                     <p className="mt-1 break-words text-sm font-semibold text-gray-800">
                                                                         {topic.title}
                                                                     </p>
+
                                                                     <p className="mt-1 text-xs text-gray-500">
                                                                         {lessonsLoaded
                                                                             ? `${topicLessons.length} lessons`
@@ -849,7 +1132,9 @@ const AdminMainContent = () => {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() =>
-                                                                        handleDeleteTopic(topic)
+                                                                        handleDeleteTopic(
+                                                                            topic
+                                                                        )
                                                                     }
                                                                     title="Delete topic"
                                                                     className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50"
@@ -866,6 +1151,7 @@ const AdminMainContent = () => {
                                                                         <h3 className="text-sm font-semibold text-gray-800">
                                                                             Lessons
                                                                         </h3>
+
                                                                         <p className="mt-1 text-xs text-gray-400">
                                                                             Learning content, examples, videos, and materials live inside lessons.
                                                                         </p>
@@ -896,70 +1182,82 @@ const AdminMainContent = () => {
                                                                             size={25}
                                                                             className="mx-auto mb-2 text-gray-300"
                                                                         />
+
                                                                         <p className="text-sm text-gray-600">
                                                                             No lessons for this topic yet.
                                                                         </p>
+
                                                                         <p className="mt-1 text-xs text-gray-400">
                                                                             Add a lesson to provide the learning material.
                                                                         </p>
                                                                     </div>
                                                                 ) : (
                                                                     <div className="space-y-2">
-                                                                        {topicLessons.map((lesson) => {
-                                                                            const lessonId = getLessonId(lesson);
+                                                                        {topicLessons.map(
+                                                                            (lesson) => {
+                                                                                const lessonId =
+                                                                                    getLessonId(
+                                                                                        lesson
+                                                                                    );
 
-                                                                            return (
-                                                                                <div
-                                                                                    key={lessonId}
-                                                                                    className="flex flex-col gap-3 rounded-lg border border-gray-100 bg-white p-3 sm:flex-row sm:items-center"
-                                                                                >
-                                                                                    <div className="flex min-w-0 flex-1 items-start gap-3">
-                                                                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600">
-                                                                                            <FileText size={15} />
+                                                                                return (
+                                                                                    <div
+                                                                                        key={lessonId}
+                                                                                        className="flex flex-col gap-3 rounded-lg border border-gray-100 bg-white p-3 sm:flex-row sm:items-center"
+                                                                                    >
+                                                                                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                                                                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600">
+                                                                                                <FileText size={15} />
+                                                                                            </div>
+
+                                                                                            <div className="min-w-0 flex-1">
+                                                                                                <p className="text-[11px] text-gray-400">
+                                                                                                    Lesson{" "}
+                                                                                                    {getLessonNumber(
+                                                                                                        lesson
+                                                                                                    )}
+                                                                                                </p>
+
+                                                                                                <p className="mt-1 break-words text-sm font-medium text-gray-800">
+                                                                                                    {lesson.title}
+                                                                                                </p>
+                                                                                            </div>
                                                                                         </div>
-                                                                                        <div className="min-w-0 flex-1">
-                                                                                            <p className="text-[11px] text-gray-400">
-                                                                                                Lesson {getLessonNumber(lesson)}
-                                                                                            </p>
-                                                                                            <p className="mt-1 break-words text-sm font-medium text-gray-800">
-                                                                                                {lesson.title}
-                                                                                            </p>
-                                                                                        </div>
-                                                                                    </div>
 
-                                                                                    <div className="flex shrink-0 items-center gap-2 pl-11 sm:pl-0">
-                                                                                        <NavLink
-                                                                                            to={COURSE_ROUTES.editLesson}
-                                                                                            state={{
-                                                                                                lesson,
-                                                                                                topic,
-                                                                                                topicId,
-                                                                                                course: selectedCourse,
-                                                                                                courseId: selectedCourseId,
-                                                                                            }}
-                                                                                            title="Edit lesson"
-                                                                                            className="rounded-lg border border-blue-200 p-2 text-blue-600 hover:bg-blue-50"
-                                                                                        >
-                                                                                            <Pen size={14} />
-                                                                                        </NavLink>
-
-                                                                                        <button
-                                                                                            type="button"
-                                                                                            onClick={() =>
-                                                                                                handleDeleteLesson(
+                                                                                        <div className="flex shrink-0 items-center gap-2 pl-11 sm:pl-0">
+                                                                                            <NavLink
+                                                                                                to={COURSE_ROUTES.editLesson}
+                                                                                                state={{
                                                                                                     lesson,
-                                                                                                    topicId
-                                                                                                )
-                                                                                            }
-                                                                                            title="Delete lesson"
-                                                                                            className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50"
-                                                                                        >
-                                                                                            <Trash size={14} />
-                                                                                        </button>
+                                                                                                    topic,
+                                                                                                    topicId,
+                                                                                                    course: selectedCourse,
+                                                                                                    courseId: selectedCourseId,
+                                                                                                }}
+                                                                                                title="Edit lesson"
+                                                                                                className="rounded-lg border border-blue-200 p-2 text-blue-600 hover:bg-blue-50"
+                                                                                            >
+                                                                                                <Pen size={14} />
+                                                                                            </NavLink>
+
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() =>
+                                                                                                    handleDeleteLesson(
+                                                                                                        lesson,
+                                                                                                        topicId
+                                                                                                    )
+                                                                                                }
+                                                                                                title="Delete lesson"
+                                                                                                className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50"
+                                                                                            >
+                                                                                                <Trash size={14} />
+                                                                                            </button>
+                                                                                        </div>
                                                                                     </div>
-                                                                                </div>
-                                                                            );
-                                                                        })}
+                                                                                );
+                                                                            }
+                                                                        )}
                                                                     </div>
                                                                 )}
                                                             </div>

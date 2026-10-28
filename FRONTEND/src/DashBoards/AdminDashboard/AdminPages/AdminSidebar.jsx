@@ -12,6 +12,7 @@ import {
   X,
   Settings,
   House,
+  MessagesSquare
 } from "lucide-react";
 
 import { NavLink, Outlet } from "react-router-dom";
@@ -106,6 +107,15 @@ const AdminSidebar = () => {
           >
             <House size={20} />
             <span>Topics</span>
+          </NavLink>
+
+          <NavLink
+            to="/admin-dashboard/comments"
+            onClick={closeSidebar}
+            className={navLinkClass}
+          >
+            <MessagesSquare size={20} />
+            <span>Students Voices</span>
           </NavLink>
 
           <div className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-3 transition duration-200 hover:bg-white hover:text-blue-950">

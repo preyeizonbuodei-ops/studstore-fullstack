@@ -70,17 +70,27 @@ exports.Register = async (req, res) => {
             matricNumber,
             level,
             department,
-            role,
-            lastLogin,
-            isLoggedIn,
         } = req.body;
 
+        // Normalize the matric number.
+        // An empty value is treated as a missing matric number.
+        const normalizedMatricNumber =
+            typeof matricNumber === "string"
+                ? matricNumber.trim().toUpperCase()
+                : matricNumber;
+
+        const matricNumberForValidation =
+            normalizedMatricNumber === ""
+                ? undefined
+                : normalizedMatricNumber;
+
+        // Validate registration details using Joi.
         const { error } = ValidateUser.validate({
             username,
             email,
             password,
             confirmPassword,
-            matricNumber,
+            matricNumber: matricNumberForValidation,
             level,
             department,
         });
@@ -109,6 +119,7 @@ exports.Register = async (req, res) => {
             });
         }
 
+        // Check whether the email already exists.
         const check = await User.findOne({ email });
 
         if (check) {
@@ -118,8 +129,10 @@ exports.Register = async (req, res) => {
             });
         }
 
+        // Hash the password.
         const hashedPassword = await DoHash(password, 10);
 
+        // Generate the email verification code.
         const verificationToken = Math.floor(
             100000 + Math.random() * 900000
         ).toString();
@@ -127,20 +140,38 @@ exports.Register = async (req, res) => {
         const verificationTokenExpiresAt =
             Date.now() + 24 * 60 * 60 * 1000;
 
-        const newUser = new User({
+        // Prepare the new user document.
+        const newUserData = {
             username,
             email,
             password: hashedPassword,
-            level,
+            level: String(level),
             department,
-            matricNumber,
-            role,
-            isLoggedIn,
-            lastLogin,
+
+            // Account status fields.
+            isLoggedIn: false,
+            isVerified: false,
+            lastLogin: Date.now(),
+
+            // Email verification fields.
             verificationToken,
             verificationTokenExpiresAt,
-        });
+        };
 
+        // Save the matric number whenever one is provided.
+        // 100-level students without a matric number can register.
+        if (
+            typeof normalizedMatricNumber === "string" &&
+            normalizedMatricNumber.length > 0
+        ) {
+            newUserData.matricNumber = normalizedMatricNumber;
+        }
+
+        // The schema supplies the default role of "Student".
+        // Do not accept a role from public registration input.
+        const newUser = new User(newUserData);
+
+        // Send the verification email.
         await SendMail({
             to: newUser.email,
             subject: "StudStore Account Verification Code",
@@ -157,6 +188,7 @@ exports.Register = async (req, res) => {
             `,
         });
 
+        // Hash the verification code before storing it.
         const hashedCodeValue = hmacProcess(
             verificationToken,
             process.env.HMAC_VERIFICATION_CODE_SECRET
@@ -164,6 +196,7 @@ exports.Register = async (req, res) => {
 
         newUser.verificationToken = hashedCodeValue;
 
+        // Save the new user document.
         await newUser.save();
 
         return res.status(201).json({

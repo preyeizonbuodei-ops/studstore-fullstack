@@ -83,6 +83,9 @@ const UserRegister = () => {
 
     const { signup, isLoading } = useAuthStore();
 
+    // Determine whether matric number is optional.
+    const isLevel100 = Number(formValues.level) === 100;
+
     // Validate the form only when requested.
     const validate = (values) => {
         const errors = {};
@@ -90,23 +93,29 @@ const UserRegister = () => {
         if (!values.username.trim()) {
             errors.username = "Username is required.";
         } else if (values.username.trim().length < 5) {
-            errors.username = "Username must contain at least 5 characters.";
+            errors.username =
+                "Username must contain at least 5 characters.";
         } else if (values.username.trim().length > 59) {
-            errors.username = "Username cannot exceed 59 characters.";
+            errors.username =
+                "Username cannot exceed 59 characters.";
         }
 
         if (!values.email.trim()) {
             errors.email = "Email is required.";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
+        } else if (
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())
+        ) {
             errors.email = "Please enter a valid email address.";
         }
 
         if (!values.password) {
             errors.password = "Password is required.";
         } else if (values.password.length < 12) {
-            errors.password = "Password must contain at least 12 characters.";
+            errors.password =
+                "Password must contain at least 12 characters.";
         } else if (values.password.length > 128) {
-            errors.password = "Password cannot exceed 128 characters.";
+            errors.password =
+                "Password cannot exceed 128 characters.";
         } else if (
             !/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s])[\s\S]+$/.test(
                 values.password
@@ -117,15 +126,37 @@ const UserRegister = () => {
         }
 
         if (!values.confirmPassword) {
-            errors.confirmPassword = "Please confirm your password.";
+            errors.confirmPassword =
+                "Please confirm your password.";
         } else if (values.password !== values.confirmPassword) {
             errors.confirmPassword = "Passwords do not match.";
         }
 
-        if (!values.matricNumber.trim()) {
-            errors.matricNumber = "Matric number is required.";
-        } else {
-            const match = values.matricNumber.trim().match(matricNumberRegex);
+        if (!values.department) {
+            errors.department = "Please select your department.";
+        }
+
+        if (!values.level) {
+            errors.level = "Please select your level.";
+        } else if (
+            ![100, 200, 300, 400, 500].includes(Number(values.level))
+        ) {
+            errors.level = "Please select a valid level.";
+        }
+
+        // MATRIC NUMBER VALIDATION
+        const matricNumber = values.matricNumber.trim();
+
+        // Matric number is required only for levels above 100.
+        if (!matricNumber && Number(values.level) !== 100) {
+            errors.matricNumber =
+                "Matric number is required for students above 100 Level.";
+        }
+
+        // If a matric number is entered, validate it regardless
+        // of the student's level.
+        if (matricNumber) {
+            const match = matricNumber.match(matricNumberRegex);
 
             if (!match) {
                 errors.matricNumber =
@@ -145,14 +176,6 @@ const UserRegister = () => {
                         `The code ${code} requires ${expectedDepartment.name}.`;
                 }
             }
-        }
-
-        if (!values.department) {
-            errors.department = "Please select your department.";
-        }
-
-        if (!values.level) {
-            errors.level = "Please select your level.";
         }
 
         return errors;
@@ -176,7 +199,7 @@ const UserRegister = () => {
         setFormValues(updatedValues);
         setServerError("");
 
-        // Revalidate only after the student has attempted submission.
+        // Revalidate after submission, including when the level changes.
         if (hasSubmitted) {
             setFormErrors(validate(updatedValues));
         }
@@ -200,14 +223,16 @@ const UserRegister = () => {
         }
 
         try {
+            const matricNumber = formValues.matricNumber.trim();
+
             await signup(
                 formValues.email.trim(),
                 formValues.password,
                 formValues.confirmPassword,
                 formValues.username.trim(),
                 formValues.department,
-                formValues.matricNumber.trim(),
-                formValues.level
+                matricNumber || undefined,
+                Number(formValues.level)
             );
 
             navigate("/verify-email", {
@@ -385,14 +410,29 @@ const UserRegister = () => {
 
                             {/* Matric number */}
                             <Input
-                                inputLabel="Matric Number"
+                                inputLabel={
+                                    isLevel100
+                                        ? "Matric Number (Optional for 100 Level)"
+                                        : "Matric Number"
+                                }
                                 icon={GraduationCap}
                                 type="text"
-                                placeholder="FUO/24/MCE/12345"
+                                placeholder={
+                                    isLevel100
+                                        ? "Leave blank if not yet issued"
+                                        : "FUO/24/MCE/12345"
+                                }
                                 name="matricNumber"
                                 value={formValues.matricNumber}
                                 onChange={handleChange}
                             />
+
+                            {isLevel100 && (
+                                <p className="mt-1 text-xs leading-5 text-gray-500">
+                                    Your matric number is not required for
+                                    100 Level. You can register without one.
+                                </p>
+                            )}
 
                             {hasSubmitted && formErrors.matricNumber && (
                                 <p className={fieldErrorClass}>
@@ -464,7 +504,7 @@ const UserRegister = () => {
                                 )}
                             </div>
 
-                            {/* Confirm password with independent show/hide button */}
+                            {/* Confirm password */}
                             <div className="mt-4 mb-4">
                                 <label
                                     htmlFor="confirmPassword"

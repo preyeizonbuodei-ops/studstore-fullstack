@@ -1,10 +1,12 @@
-const joi = require("joi");
+const Joi = require("joi");
 
 const strongPassword = () =>
-    joi.string()
+    Joi.string()
         .min(12)
         .max(128)
-        .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s])[\s\S]+$/)
+        .pattern(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s])[\s\S]+$/
+        )
         .required()
         .messages({
             "string.base": "Password must be a valid string.",
@@ -13,7 +15,7 @@ const strongPassword = () =>
             "string.max": "Password cannot exceed 128 characters.",
             "string.pattern.base":
                 "Password must contain uppercase and lowercase letters, a number, and a special character.",
-            "any.required": "Password is required."
+            "any.required": "Password is required.",
         });
 
 const normalizeDepartment = (department) =>
@@ -24,15 +26,15 @@ const normalizeDepartment = (department) =>
 const departmentCodes = {
     CVE: {
         name: "Civil Engineering",
-        aliases: ["civilengineering", "civil"]
+        aliases: ["civilengineering", "civil"],
     },
     MEE: {
         name: "Mechanical Engineering",
-        aliases: ["mechanicalengineering", "mechanical"]
+        aliases: ["mechanicalengineering", "mechanical"],
     },
     MCE: {
         name: "Mechatronics Engineering",
-        aliases: ["mechatronicsengineering", "mechatronics"]
+        aliases: ["mechatronicsengineering", "mechatronics"],
     },
     PGE: {
         name: "Petroleum and Gas",
@@ -40,25 +42,38 @@ const departmentCodes = {
             "petroleumandgas",
             "petroleumandgasengineering",
             "petroleumgas",
-            "petroleumgasengineering"
-        ]
+            "petroleumgasengineering",
+        ],
     },
     EEE: {
         name: "Electrical Electronics Engineering",
         aliases: [
             "electricalelectronicsengineering",
             "electricalandelectronicsengineering",
-            "electricalelectronics"
-        ]
+            "electricalelectronics",
+        ],
     },
     CHM: {
         name: "Chemical Engineering",
-        aliases: ["chemicalengineering", "chemical"]
-    }
+        aliases: ["chemicalengineering", "chemical"],
+    },
 };
 
-exports.ValidateUser = joi.object({
-    username: joi.string()
+const matricNumberPattern =
+    /^FUO\/\d{2}\/(MCE|CVE|PGE|EEE|MEE|CHM)\/\d{5}$/;
+
+const matricNumberValidation = Joi.string()
+    .pattern(matricNumberPattern)
+    .messages({
+        "string.base": "Matric number must be a valid string.",
+        "string.empty": "Matric number is required.",
+        "string.pattern.base":
+            "Matric number must follow the format FUO/24/MCE/12345, using a valid department code.",
+        "any.required": "Matric number is required.",
+    });
+
+exports.ValidateUser = Joi.object({
+    username: Joi.string()
         .min(5)
         .max(59)
         .required()
@@ -66,58 +81,68 @@ exports.ValidateUser = joi.object({
             "string.empty": "Username is required.",
             "string.min": "Username must contain at least 5 characters.",
             "string.max": "Username cannot exceed 59 characters.",
-            "any.required": "Username is required."
+            "any.required": "Username is required.",
         }),
 
-    email: joi.string()
+    email: Joi.string()
         .email()
         .required()
         .messages({
             "string.empty": "Email is required.",
             "string.email": "Please enter a valid email address.",
-            "any.required": "Email is required."
+            "any.required": "Email is required.",
         }),
 
     password: strongPassword(),
 
-    confirmPassword: joi.string()
-        .valid(joi.ref("password"))
+    confirmPassword: Joi.string()
+        .valid(Joi.ref("password"))
         .required()
         .messages({
             "any.only": "Passwords do not match.",
             "string.empty": "Please confirm your password.",
-            "any.required": "Please confirm your password."
+            "any.required": "Please confirm your password.",
         }),
 
-    department: joi.string()
+    department: Joi.string()
         .required()
         .messages({
             "string.empty": "Please select a department.",
-            "any.required": "Please select a department."
+            "any.required": "Please select a department.",
         }),
 
-    level: joi.number()
+    level: Joi.number()
         .required()
         .messages({
             "number.base": "Please select a valid level.",
-            "any.required": "Please select a level."
+            "any.required": "Please select a level.",
         }),
 
-    matricNumber: joi.string()
-        .pattern(/^FUO\/\d{2}\/(MCE|CVE|PGE|EEE|MEE|CHM)\/\d{5}$/)
-        .required()
-        .messages({
-            "string.empty": "Matric number is required.",
-            "string.pattern.base":
-                "Matric number must follow the format FUO/24/MCE/12345, using a valid department code.",
-            "any.required": "Matric number is required."
-        })
-}).custom((value, helpers) => {
-    const match = value.matricNumber?.match(
-        /^FUO\/\d{2}\/(MCE|CVE|PGE|EEE|MEE|CHM)\/\d{5}$/
-    );
+    matricNumber: Joi.when("level", {
+        is: 100,
 
-    // Let the matric-number pattern validation report malformed numbers.
+        // 100-level students may leave this field empty.
+        // If they provide a number, its format is still checked.
+        then: matricNumberValidation.allow("").optional(),
+
+        // All other levels must provide a valid matric number.
+        otherwise: matricNumberValidation.required(),
+    }),
+}).custom((value, helpers) => {
+    const matricNumber = value.matricNumber;
+
+    // No matric number is acceptable for 100-level students.
+    if (!matricNumber) {
+        if (Number(value.level) === 100) {
+            return value;
+        }
+
+        return value;
+    }
+
+    // The Joi pattern validation reports malformed matric numbers.
+    const match = matricNumber.match(matricNumberPattern);
+
     if (!match) {
         return value;
     }
@@ -138,30 +163,30 @@ exports.ValidateUser = joi.object({
     return value;
 }).messages({
     "any.invalid":
-        "The selected department does not match the department code in your matric number."
+        "The selected department does not match the department code in your matric number.",
 });
 
-exports.ValidateChangePassword = joi.object({
-    oldPassword: joi.string()
+exports.ValidateChangePassword = Joi.object({
+    oldPassword: Joi.string()
         .required()
         .messages({
             "string.empty": "Current password is required.",
-            "any.required": "Current password is required."
+            "any.required": "Current password is required.",
         }),
 
-    newPassword: strongPassword()
+    newPassword: strongPassword(),
 });
 
-exports.ValidateComment = joi.object({
-    username: joi.string()
+exports.ValidateComment = Joi.object({
+    comment: Joi.string()
+        .trim()
+        .min(3)
+        .max(2000)
         .required()
         .messages({
-            "string.empty": "Username is required."
+            "string.empty": "Cannot submit an empty comment.",
+            "string.min": "Your comment must contain at least 3 characters.",
+            "string.max": "Your comment cannot exceed 2,000 characters.",
+            "any.required": "Comment is required.",
         }),
-
-    comment: joi.string()
-        .required()
-        .messages({
-            "string.empty": "Cannot submit an empty comment."
-        })
 });

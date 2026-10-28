@@ -26,6 +26,7 @@ import StudStoreAi from "./StudStoreAi";
 // ADMIN
 import AdminSidebar from "./DashBoards/AdminDashboard/AdminPages/AdminSidebar";
 import AdminMainContent from "./DashBoards/AdminDashboard/AdminPages/AdminMainContent";
+import AdminComment from "./DashBoards/AdminDashboard/AdminPages/AdminComment";
 import AdminDepartment from "./DashBoards/AdminDashboard/AdminPages/Department";
 import AdminMajorArea from "./DashBoards/AdminDashboard/AdminPages/AdminMajorArea";
 import Topics from "./DashBoards/AdminDashboard/AdminPages/Topics";
@@ -256,6 +257,11 @@ function App() {
                         <Route
                             path="settings"
                             element={<AdminSettings />}
+                        />
+
+                        <Route
+                            path="/admin-dashboard/comments"
+                            element={<AdminComment />}
                         />
                     </Route>
 

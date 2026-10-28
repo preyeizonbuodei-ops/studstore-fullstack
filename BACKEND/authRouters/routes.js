@@ -2,7 +2,7 @@ const express = require("express");
 
 const { Register, Login, Logout, verifyVerificationCode, ChangePassword, ForgotPasswordEmail, VerifyForgotPasswordCode, ResetPassword, getRefreshToken } = require("../authControllers/register");
 const { ValidateToken } = require("../middlewares/validateToken");
-const { CreateComment, GetAllComments, GetOneComment, UpdateComment, DeleteComment} = require("../authControllers/commentController");
+const { CreateComment, GetAllComments, GetOneComment, UpdateComment, DeleteComment, ToggleCommentLike, AddCommentReply, UpdateCommentReply, DeleteCommentReply} = require("../authControllers/commentController");
 const { ConnectNews } = require("../authControllers/NewsController");
 const { GetCourses, GetCourseById } = require("../authControllers/CoursesUser/GetCourses");
 const { GetCurrentUser } = require("../authControllers/GetCurrentUser");
@@ -96,6 +96,10 @@ router.get( "/all-comment", ValidateToken, authorizedUserRoles("Student"), GetAl
 router.get( "/get-one-comment/:id", ValidateToken, authorizedUserRoles("Student"), GetOneComment);
 router.put("/update-comment/:id", ValidateToken, authorizedUserRoles("Student"), UpdateComment);
 router.delete( "/delete-comment/:id", ValidateToken, authorizedUserRoles("Student"), DeleteComment);
+router.post( "/like-comment/:id", ValidateToken, authorizedUserRoles("Student"), ToggleCommentLike );
+router.post( "/reply-comment/:id", ValidateToken, authorizedUserRoles("Student"), AddCommentReply);
+router.put( "/update-comment-reply/:id/:replyId", ValidateToken, authorizedUserRoles("Student"), UpdateCommentReply);
+router.delete( "/delete-comment-reply/:id/:replyId", ValidateToken, authorizedUserRoles("Student"), DeleteCommentReply);
 
 router.get("/get-news", ConnectNews);
 router.post("/send-email", ValidateToken, authorizedUserRoles("Student"), ContactFormController);

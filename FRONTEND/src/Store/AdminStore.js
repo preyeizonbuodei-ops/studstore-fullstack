@@ -1,7 +1,9 @@
 import axios from "axios";
 import { create } from "zustand";
 
-const API_URL = "https://api.studstore.com.ng/api/v1/admin";
+const API_URL = import.meta.env.DEV
+    ? "http://localhost:8000/api/v1/admin"
+    : "https://api.studstore.com.ng/api/v1/admin";
 
 axios.defaults.withCredentials = true;
 
