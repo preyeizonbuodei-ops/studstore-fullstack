@@ -18,7 +18,7 @@ import logo from "../Image/FBLOGO.jpg";
 import { useAuthStore } from "../Store/AuthStore";
 
 const matricNumberRegex =
-    /^FUO\/\d{2}\/(MCE|CVE|PGE|EEE|MEE|CHM)\/\d{5}$/;
+    /^FUO\/\d{2}\/(MCE|CVE|PGE|EEE|MEE|CME)\/\d{5}$/;
 
 const departmentByCode = {
     CVE: {
@@ -50,7 +50,7 @@ const departmentByCode = {
             "electricalelectronics"
         ]
     },
-    CHM: {
+    CME: {
         name: "Chemical Engineering",
         aliases: ["chemicalengineering", "chemical"]
     }

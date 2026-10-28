@@ -53,14 +53,14 @@ const departmentCodes = {
             "electricalelectronics",
         ],
     },
-    CHM: {
+    CME: {
         name: "Chemical Engineering",
         aliases: ["chemicalengineering", "chemical"],
     },
 };
 
 const matricNumberPattern =
-    /^FUO\/\d{2}\/(MCE|CVE|PGE|EEE|MEE|CHM)\/\d{5}$/;
+    /^FUO\/\d{2}\/(MCE|CVE|PGE|EEE|MEE|CME)\/\d{5}$/;
 
 const matricNumberValidation = Joi.string()
     .pattern(matricNumberPattern)
