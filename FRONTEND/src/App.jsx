@@ -417,7 +417,7 @@ function App() {
                             element={<Courses />}
                         />
 
-                        {/* Course ΓåÆ Topics */}
+                        {/* Course ╬ô├Ñ├å Topics */}
                         <Route
                             path="/courses/:courseId/topics"
                             element={<TopicPage />}
@@ -429,13 +429,13 @@ function App() {
                             element={<TopicPage />}
                         />
 
-                        {/* Topic ΓåÆ Lessons */}
+                        {/* Topic ╬ô├Ñ├å Lessons */}
                         <Route
                             path="/topics/:topicId/lessons"
                             element={<TopicLessonsPage />}
                         />
 
-                        {/* Lesson ΓåÆ Notes, examples, videos and materials */}
+                        {/* Lesson ╬ô├Ñ├å Notes, examples, videos and materials */}
                         <Route
                             path="/lessons/:lessonId"
                             element={<LessonDetailsPage />}
@@ -459,9 +459,6 @@ function App() {
                         <Route
                             path="/me/student-voices"
                             element={<StudentVoices />}
-                        />
-
-                        }
                         />
 
                         {/* Department learning */}
