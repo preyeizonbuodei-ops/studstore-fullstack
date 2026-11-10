@@ -3,6 +3,8 @@ import {
     Route,
     Routes,
     useLocation,
+    useNavigate,
+    useParams,
 } from "react-router-dom";
 
 import { useAuthStore } from "./Store/AuthStore";
@@ -54,6 +56,8 @@ import AdminEditLesson from "./DashBoards/AdminDashboard/AdminPageForms/AdminEdi
 import AdminCreateMajorArea from "./DashBoards/AdminDashboard/AdminPageForms/CreateMajorAreaForm";
 import CreateMajorAreaTopic from "./DashBoards/AdminDashboard/AdminPageForms/MajorTopicForm";
 import CreateResearchPaper from "./DashBoards/AdminDashboard/AdminPageForms/CreateResearchPaper";
+import StudentQuestionBank from "./DashBoards/UserDashboard/UserPages/QuestionBank/StudentQuestionBank";
+import StudentPastQuestionPaper from "./DashBoards/UserDashboard/UserPages/QuestionBank/StudentPastQuestionPaper";
 
 // ADMIN AUTH
 import AdminLogin from "./Pages/AdminRegisters/AdminLogin";
@@ -77,6 +81,10 @@ import Profile from "./DashBoards/UserDashboard/UserPages/Component/Profile";
 import Settings from "./DashBoards/UserDashboard/UserPages/Component/Settings";
 
 // STUDENT EXAM SIMULATOR
+import StudentExamDashboard from "./Store/ExamSimulator/StudentExamDashboard";
+import StudentExamHistory from "./Store/ExamSimulator/StudentExamHistory";
+import StudentExamPage from "./Store/ExamSimulator/StudentExamPage";
+import StudentExamResult from "./Store/ExamSimulator/StudentExamResult";
 
 // DEPARTMENT AND RESEARCH PAGES
 import Department from "./Pages/Department";
@@ -93,6 +101,18 @@ import AdminGuestRoute from "./AdminGuestRoute";
 import AdminProtectedRoute from "./AdminProtectedRoute";
 
 import "./App.css";
+
+
+function LegacyExamRedirect() {
+    const { examId } = useParams();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        navigate(`/me/exams/${examId}`, { replace: true });
+    }, [examId, navigate]);
+
+    return null;
+}
 
 
 function App() {
@@ -417,7 +437,43 @@ function App() {
                             element={<Courses />}
                         />
 
-                        {/* Course ╬ô├Ñ├å Topics */}
+                        {/* Student exam simulator */}
+                        <Route
+                            path="/me/exams"
+                            element={<StudentExamDashboard />}
+                        />
+
+                        <Route
+                            path="/me/exam-history"
+                            element={<StudentExamHistory />}
+                        />
+
+                        <Route
+                            path="/me/exams/:examId"
+                            element={<StudentExamPage />}
+                        />
+
+                        <Route
+                            path="/student/exams/:examId"
+                            element={<LegacyExamRedirect />}
+                        />
+
+                        <Route
+                            path="/me/exam-results/:attemptId"
+                            element={<StudentExamResult />}
+                        />
+
+                        <Route
+                            path="/me/question-bank"
+                            element={<StudentQuestionBank />}
+                        />
+
+                        <Route
+                            path="/me/question-bank/papers/:paperId"
+                            element={<StudentPastQuestionPaper />}
+                        />
+
+                        {/* Course → Topics */}
                         <Route
                             path="/courses/:courseId/topics"
                             element={<TopicPage />}
@@ -429,13 +485,13 @@ function App() {
                             element={<TopicPage />}
                         />
 
-                        {/* Topic ╬ô├Ñ├å Lessons */}
+                        {/* Topic → Lessons */}
                         <Route
                             path="/topics/:topicId/lessons"
                             element={<TopicLessonsPage />}
                         />
 
-                        {/* Lesson ╬ô├Ñ├å Notes, examples, videos and materials */}
+                        {/* Lesson → Notes, examples, videos and materials */}
                         <Route
                             path="/lessons/:lessonId"
                             element={<LessonDetailsPage />}
@@ -459,6 +515,11 @@ function App() {
                         <Route
                             path="/me/student-voices"
                             element={<StudentVoices />}
+                        />
+
+                        <Route
+                            path="/me/question-bank/papers/:paperId"
+                            element={<StudentPastQuestionPaper />}
                         />
 
                         {/* Department learning */}

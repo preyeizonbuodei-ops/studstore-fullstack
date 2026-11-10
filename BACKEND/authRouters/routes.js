@@ -21,10 +21,40 @@ const { ContactFormController } = require("../authControllers/ContactFormControl
 const { getAllResearchPapers, getResearchPaperById } = require("../authControllers/Admin/DepartmentController/ResearchAreaController");
 const { AuthLimiter } = require("../middlewares/RateLimit");
 const { askQuestion, getConversations, getConversation } = require("../authControllers/StudStoreAi");
-
-
+const { GetPublishedExams, StartExamAttempt, GetAttemptQuestions, SaveAttemptAnswer, SubmitExamAttempt, GetExamHistory, GetExamResult} = require("../authControllers/ExamSimulator/StudentExamController");
+const {
+    GetStudentPastQuestionPapers,
+    GetStudentPastQuestions,
+} = require("../authControllers/QuestionBank/StudentQuestionBankController");
 
 const router = express.Router();
+
+
+// Student Question Bank Practice Routes
+router.get(
+    "/question-bank/papers",
+    ValidateToken,
+    authorizedUserRoles("Student"),
+    GetStudentPastQuestionPapers
+);
+
+router.get(
+    "/question-bank/papers/:paperId/questions",
+    ValidateToken,
+    authorizedUserRoles("Student"),
+    GetStudentPastQuestions
+);
+
+
+// Student Exam Simulator routes
+router.get( "/exams", ValidateToken, authorizedUserRoles("Student"), GetPublishedExams);
+router.post( "/exams/:examId/start", ValidateToken, authorizedUserRoles("Student"), StartExamAttempt);
+router.get( "/exam-attempts/:attemptId/questions", ValidateToken, authorizedUserRoles("Student"), GetAttemptQuestions);
+router.put( "/exam-attempts/:attemptId/answer", ValidateToken, authorizedUserRoles("Student"), SaveAttemptAnswer);
+router.post( "/exam-attempts/:attemptId/submit", ValidateToken, authorizedUserRoles("Student"), SubmitExamAttempt);
+// Student exam history and results
+router.get( "/exam-attempts/history", ValidateToken, authorizedUserRoles("Student"), GetExamHistory);
+router.get( "/exam-attempts/:attemptId/result", ValidateToken, authorizedUserRoles("Student"), GetExamResult);
 
 // StudStore Ai Route
 router.post("/ask-ai", ValidateToken, askQuestion);
@@ -83,7 +113,7 @@ router.get("/get-major-area-topic/:majorTopicId", ValidateToken, authorizedUserR
 router.patch("/verify-verification-code", AuthLimiter, verifyVerificationCode);
 router.patch("/change-password", AuthLimiter, ValidateToken, ChangePassword);
 router.patch("/forgot-password", AuthLimiter, ForgotPasswordEmail);
-router.patch("/verify-forgot-password", AuthLimiter, VerifyForgotPasswordCode);
+router.patch("/verify-forgot-password", VerifyForgotPasswordCode);
 router.patch("/reset-password", ResetPassword);
 
 // Research Papers route

@@ -7,9 +7,11 @@ import {
     Settings,
     User,
     Book,
+    BookOpen,
     Menu,
     X,
     Boxes,
+    ClipboardList,
     MessagesSquare,
 } from "lucide-react";
 import {
@@ -31,6 +33,10 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
     const handleNavigation = () => {
         setIsOpen(false);
     };
+
+    const isQuestionBankActive =
+    location.pathname === "/me/question-bank" ||
+    location.pathname.startsWith("/me/question-bank/");
 
     const linkClass = ({ isActive }) =>
         `flex items-center gap-3 rounded px-3 py-3 transition duration-300 ${
@@ -150,6 +156,30 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
                     >
                         <User size={20} />
                         <span>Profile</span>
+                    </NavLink>
+
+                        <NavLink
+                            to="/me/exams"
+                            className={linkClass}
+                            >
+                            <ClipboardList size={20} />
+                            <span>Take Exam</span>
+                            </NavLink>
+
+                            {/* Past Questions */}
+                    <NavLink
+                        to="/me/question-bank"
+                        onClick={handleNavigation}
+                        className={() =>
+                            `flex items-center gap-3 rounded px-3 py-3 transition duration-300 ${
+                                isQuestionBankActive
+                                    ? "bg-white text-black"
+                                    : "hover:bg-white hover:text-black"
+                            }`
+                        }
+                    >
+                        <BookOpen size={20} />
+                        <span>Past Questions</span>
                     </NavLink>
 
                     {/* Student Voices */}

@@ -23,6 +23,7 @@ app.use(
             "https://www.studstore.com.ng",
             "https://studstore-frontend-staging.onrender.com",
             "http://localhost:5173",
+            "http://localhost:5174",
             "http://localhost:3000",
         ],
         credentials: true,

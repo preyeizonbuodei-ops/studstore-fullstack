@@ -291,6 +291,7 @@ const AdminComment = () => {
                     <div className="p-5 sm:p-8">
                         <NavLink
                             to="/admin-dashboard"
+                            
                             className="mb-6 inline-flex items-center gap-2 text-sm text-blue-100 transition hover:text-white"
                         >
                             <ArrowLeft size={17} />
