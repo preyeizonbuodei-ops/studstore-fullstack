@@ -143,6 +143,7 @@ exports.StartExamAttempt = async (req, res) => {
       examId: exam._id,
       $or: [
         { questionSource: "manual" },
+        { questionSource: "past_question" },
         { questionSource: "ai", reviewStatus: "approved" }
       ]
     };
@@ -278,9 +279,10 @@ exports.GetAttemptQuestions = async (req, res) => {
       _id: { $in: questionIds },
       examId: attempt.examId._id,
       $or: [
-        { questionSource: "manual" },
-        { questionSource: "ai", reviewStatus: "approved" }
-      ]
+  { questionSource: "manual" },
+  { questionSource: "past_question" },
+  { questionSource: "ai", reviewStatus: "approved" }
+]
     })
       .select("_id questionText questionType options marks")
       .lean();
@@ -389,9 +391,10 @@ exports.SaveAttemptAnswer = async (req, res) => {
       _id: questionId,
       examId: attempt.examId,
       $or: [
-        { questionSource: "manual" },
-        { questionSource: "ai", reviewStatus: "approved" }
-      ]
+  { questionSource: "manual" },
+  { questionSource: "past_question" },
+  { questionSource: "ai", reviewStatus: "approved" }
+]
     }).select("_id questionType options");
 
     if (!question) {
@@ -500,9 +503,10 @@ exports.SubmitExamAttempt = async (req, res) => {
       _id: { $in: questionIds },
       examId: attempt.examId,
       $or: [
-        { questionSource: "manual" },
-        { questionSource: "ai", reviewStatus: "approved" },
-      ],
+  { questionSource: "manual" },
+  { questionSource: "past_question" },
+  { questionSource: "ai", reviewStatus: "approved" }
+],
     }).lean();
 
     const questionMap = new Map(
@@ -730,9 +734,10 @@ exports.GetExamResult = async (req, res) => {
       _id: { $in: questionIds },
       examId: attempt.examId._id,
       $or: [
-        { questionSource: "manual" },
-        { questionSource: "ai", reviewStatus: "approved" },
-      ],
+  { questionSource: "manual" },
+  { questionSource: "past_question" },
+  { questionSource: "ai", reviewStatus: "approved" }
+],
     })
       .select(
         "_id questionText questionType options correctOptionIndex correctAnswer explanation marks"
