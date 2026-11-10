@@ -61,6 +61,7 @@ exports.GetPublishedExams = async (req, res) => {
           examId: { $in: examIds },
           $or: [
             { questionSource: "manual" },
+            { questionSource: "past_question" },
             { questionSource: "ai", reviewStatus: "approved" }
           ]
         }
