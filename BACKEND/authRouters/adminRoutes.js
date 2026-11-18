@@ -59,10 +59,6 @@ const {
 } = require("../authControllers/Admin/DepartmentController/MajorTopicController");
 
 const {
-    createResearchPaper,
-} = require("../authControllers/Admin/DepartmentController/ResearchAreaController");
-
-const {
     getAdminDashboardStats,
 } = require("../authControllers/Admin/GetAdminStatController");
 
@@ -124,9 +120,12 @@ const {
     DeletePastQuestion,
 } = require("../modules/CourseModuels/QuestionBank/PastQuestionController");
 
+const { createResearchPaper } = require ('../authControllers/Admin/DepartmentController/ResearchAreaController')
 
 const adminRouter = express.Router();
 
+// RESEARCH PAPER ROUTES
+adminRouter.post("/create-research-paper", ValidateAdminToken, authorizedAdminRoles("Admin"), createResearchPaper)
 
 // ==========================================
 // QUESTION BANK - INDIVIDUAL QUESTIONS

@@ -1,6 +1,6 @@
 const express = require("express");
 
-const { Register, Login, Logout, verifyVerificationCode, ChangePassword, ForgotPasswordEmail, VerifyForgotPasswordCode, ResetPassword, getRefreshToken } = require("../authControllers/register");
+const { Register, Login, Logout, verifyVerificationCode, ChangePassword, ForgotPasswordEmail, VerifyForgotPasswordCode, ResetPassword, getRefreshToken, ResendVerificationCode, verifyResentCode } = require("../authControllers/register");
 const { ValidateToken } = require("../middlewares/validateToken");
 const { CreateComment, GetAllComments, GetOneComment, UpdateComment, DeleteComment, ToggleCommentLike, AddCommentReply, UpdateCommentReply, DeleteCommentReply} = require("../authControllers/commentController");
 const { ConnectNews } = require("../authControllers/NewsController");
@@ -22,28 +22,14 @@ const { getAllResearchPapers, getResearchPaperById } = require("../authControlle
 const { AuthLimiter } = require("../middlewares/RateLimit");
 const { askQuestion, getConversations, getConversation } = require("../authControllers/StudStoreAi");
 const { GetPublishedExams, StartExamAttempt, GetAttemptQuestions, SaveAttemptAnswer, SubmitExamAttempt, GetExamHistory, GetExamResult} = require("../authControllers/ExamSimulator/StudentExamController");
-const {
-    GetStudentPastQuestionPapers,
-    GetStudentPastQuestions,
-} = require("../authControllers/QuestionBank/StudentQuestionBankController");
+const { GetStudentPastQuestionPapers, GetStudentPastQuestions } = require("../authControllers/QuestionBank/StudentQuestionBankController");
 
 const router = express.Router();
 
 
 // Student Question Bank Practice Routes
-router.get(
-    "/question-bank/papers",
-    ValidateToken,
-    authorizedUserRoles("Student"),
-    GetStudentPastQuestionPapers
-);
-
-router.get(
-    "/question-bank/papers/:paperId/questions",
-    ValidateToken,
-    authorizedUserRoles("Student"),
-    GetStudentPastQuestions
-);
+router.get( "/question-bank/papers", ValidateToken, authorizedUserRoles("Student"), GetStudentPastQuestionPapers );
+router.get( "/question-bank/papers/:paperId/questions", ValidateToken, authorizedUserRoles("Student"), GetStudentPastQuestions );
 
 
 // Student Exam Simulator routes
@@ -75,25 +61,10 @@ router.get( "/get-courses", ValidateToken, authorizedUserRoles("Student"), GetCo
 router.get( "/courses/:courseId", ValidateToken, authorizedUserRoles("Student"),  GetCourseById);
 
 router.get( "/courses/:courseId/lesson", ValidateToken, authorizedUserRoles("Student"), Getlesson);
-router.get(
-  "/topics/:topicId/lessons",
-  ValidateToken,
-  authorizedUserRoles("Student"),
-  Getlesson
-);
+router.get( "/topics/:topicId/lessons", ValidateToken, authorizedUserRoles("Student"), Getlesson );
 
-router.get(
-  "/courses/:courseId/topics",
-  ValidateToken,
-  authorizedUserRoles("Student"),
-  GetTopicsByCourse
-);
-router.get(
-    "/lessons/:lessonId",
-    ValidateToken,
-    authorizedUserRoles("Student"),
-    GetLessonById
-);
+router.get( "/courses/:courseId/topics", ValidateToken, authorizedUserRoles("Student"), GetTopicsByCourse);
+router.get( "/lessons/:lessonId", ValidateToken, authorizedUserRoles("Student"), GetLessonById);
 router.get("/topics/:topicId", ValidateToken, authorizedUserRoles("Student"), GetTopicById)
 router.post("/save-material", ValidateToken, authorizedUserRoles("Student"), SaveMaterial)
 router.get("/saved-material", ValidateToken, authorizedUserRoles("Student"), GetSavedMaterials)
@@ -111,6 +82,8 @@ router.get("/get-major-area-topic/:majorTopicId", ValidateToken, authorizedUserR
 
 // Email Routes
 router.patch("/verify-verification-code", AuthLimiter, verifyVerificationCode);
+router.patch("/resend-verification-code", AuthLimiter, ResendVerificationCode )
+router.patch("/verify-resent-verification-code", AuthLimiter, verifyResentCode)
 router.patch("/change-password", AuthLimiter, ValidateToken, ChangePassword);
 router.patch("/forgot-password", AuthLimiter, ForgotPasswordEmail);
 router.patch("/verify-forgot-password", VerifyForgotPasswordCode);

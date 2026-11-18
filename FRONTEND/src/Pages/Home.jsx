@@ -3,7 +3,7 @@ import Engineering from '../Image/BG.jpg'
 import Navbar from '../Components/Navbar';
 import Data from '../Components/Data';
 import Call from '../Components/Call';
-import { ArrowRight, Cog, RobotArm, HardHat, Zap, Fuel, FlaskConical, Bot, BrainCog, Landmark, Cpu, Factory, Wifi, Wrench, BookCheck, NotebookPen, Megaphone, CalendarDays, SearchSlash, TvMinimalPlay, FilePlus, UserRoundPen, Heart } from 'lucide-react';
+import { ArrowRight, Cog, RobotArm, HardHat, Zap, Fuel, FlaskConical, Bot, BrainCog, Landmark, Cpu, Factory, Wifi, Wrench, BookCheck, NotebookPen, Megaphone, Puzzle, SearchSlash, TvMinimalPlay, FilePlus, FileQuestionMark, MicVocal, UserRoundPen } from 'lucide-react';
 
 import Action from '../Components/Action';
 import Laboratory from '../Components/Laboratory';
@@ -337,25 +337,19 @@ const Home = () => {
 
                         <div className="p-6 shadow-[0_2px_12px_rgba(0,0,0,0.12)]">
                             <div className="flex cursor-pointer flex-col items-center justify-center transition duration-500 hover:translate-1.5">
-                                <Student image={NotebookPen} text="Assignment" />
+                                <Student image={Bot} text="AI Assistance (StudAI 5)" />
                             </div>
                         </div>
 
                         <div className="p-6 shadow-[0_2px_12px_rgba(0,0,0,0.12)]">
                             <div className="flex cursor-pointer flex-col items-center justify-center transition duration-500 hover:translate-1.5">
-                                <Student image={Megaphone} text="Announcements" />
+                                <Student image={FileQuestionMark } text="Past Questions" />
                             </div>
                         </div>
 
                         <div className="p-6 shadow-[0_2px_12px_rgba(0,0,0,0.12)]">
                             <div className="flex cursor-pointer flex-col items-center justify-center transition duration-500 hover:translate-1.5">
-                                <Student image={CalendarDays} text="Academic Calender" />
-                            </div>
-                        </div>
-
-                        <div className="p-6 shadow-[0_2px_12px_rgba(0,0,0,0.12)]">
-                            <div className="flex cursor-pointer flex-col items-center justify-center transition duration-500 hover:translate-1.5">
-                                <Student image={SearchSlash} text="venue Booking" />
+                                <Student image={ MicVocal} text="Student Voices" />
                             </div>
                         </div>
 
@@ -367,13 +361,7 @@ const Home = () => {
 
                         <div className="p-6 shadow-[0_2px_12px_rgba(0,0,0,0.12)]">
                             <div className="flex cursor-pointer flex-col items-center justify-center transition duration-500 hover:translate-1.5">
-                                <Student image={Heart} text="Documents" />
-                            </div>
-                        </div>
-
-                        <div className="p-6 shadow-[0_2px_12px_rgba(0,0,0,0.12)]">
-                            <div className="flex cursor-pointer flex-col items-center justify-center transition duration-500 hover:translate-1.5">
-                                <Student image={UserRoundPen} text="Lecturer Directory" />
+                                <Student image={Puzzle} text="Exam Simulator" />
                             </div>
                         </div>
                     </div>

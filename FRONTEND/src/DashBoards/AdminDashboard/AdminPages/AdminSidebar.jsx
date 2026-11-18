@@ -149,10 +149,14 @@ const AdminSidebar = () => {
                         <span>Students Voices</span>
                     </NavLink>
 
-                    <div className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-3 transition duration-200 hover:bg-white hover:text-blue-950">
+                    <NavLink
+                        to="/admin/create-research-paper"
+                        onClick={closeSidebar}
+                        className={navLinkClass}
+                    >
                         <File size={20} />
                         <span>Resources</span>
-                    </div>
+                    </NavLink>
 
                     <NavLink
                         to="/admin-dashboard/users"

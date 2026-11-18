@@ -167,8 +167,7 @@ exports.Register = async (req, res) => {
             newUserData.matricNumber = normalizedMatricNumber;
         }
 
-        // The schema supplies the default role of "Student".
-        // Do not accept a role from public registration input.
+        
         const newUser = new User(newUserData);
 
         // Send the verification email.
@@ -399,6 +398,242 @@ exports.verifyVerificationCode = async (req, res) => {
         });
     }
 };
+
+exports.ResendVerificationCode = async ( req, res ) => {
+    try {
+        // Get the Email of the user
+        const { email } = req.body
+
+        const existingUser = await User.findOne({ email });
+
+        // if no user was found  return a message of no user was found
+        if(!existingUser) {
+            return res.status(404).json({ success: false, message: "No User Found" })
+        }
+
+        if(existingUser.isVerified) {
+            return res.status(409).json({ success: false, message: "You are alreadt a verified User" })
+        }
+
+        // Generate a new verification code for the user
+        const ResentCodeExpiresAt = Date.now() + 1 * 60 * 60 * 1000;
+
+        // set the existingusers verification code expirery time to the resent verification code time
+        existingUser.verificationTokenExpiresAt = ResentCodeExpiresAt
+
+        const ResentCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        const hashedResentCode = hmacProcess(
+            String(ResentCode).trim(),
+            process.env.HMAC_VERIFICATION_CODE_SECRET
+        );
+        
+        existingUser.verificationToken = hashedResentCode
+
+        await SendMail({
+            to: existingUser.email,
+            subject: "StudStore Account Resent Verification Code",
+            text: `Your Resent Verification Code is: ${ResentCode}. Keep it secure and never share it.`,
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 24px;">
+                    <h2>StudStore Account Verification Code</h2>
+                    <p>Keep this code secure and never share it with anyone.</p>
+                    <div style="padding: 16px; background: #f1f5f9; font-size: 20px; font-weight: bold; word-break: break-all;">
+                        ${ResentCode}
+                    </div>
+                    <p>Thanks for choosing StudStore.</p>
+                </div>
+            `,
+        });
+
+        const user = existingUser.toObject()
+
+        delete user.password
+        delete user.confirmPassword
+        delete user.verificationTokenExpiresAt
+  
+        console.log(`Verification code sent: ${ResentCode}`)
+        await existingUser.save()
+        res.status(200).json({ success: true, user: user, message: `Verification Code Resent Successfully` })
+
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+exports.verifyResentCode = async( req, res ) => {
+    const { email, resentCode } = req.body
+
+    try {
+        const existingUser = await User.findOne({ email })
+        
+        if(!existingUser) {
+            return res.status(404).json({ success: false, message: "No User found with this email" })
+        }
+
+        if(existingUser.isVerified){
+            return res.status(409).json({ success: false, message: "You are already a verified user" })
+        }
+
+        if(!resentCode) {
+            return res.status(403).json({ success: false, message: "Please enter the resent code" })
+        }
+
+        const hashedValue = hmacProcess(
+                String(resentCode).trim(),
+                process.env.HMAC_VERIFICATION_CODE_SECRET
+            );   
+        if(existingUser.verificationToken !== hashedValue) {
+            return res.status({ success: false, message: "invalid verification Code" })
+        }
+
+        if(Date.now > existingUser.verificationTokenExpiresAt) {
+            return res.status(403).json({ success: false, message: "Verification code expired" })
+        }
+
+        const token = jwt.sign(
+                {
+                    id: existingUser._id,
+                    role: existingUser.role,
+                    email: existingUser.email,
+                    isVerified: true,
+                },
+                process.env.JWT_SECRET,
+                {
+                    expiresIn: "1h",
+                }
+            );
+
+            res.cookie(
+                "authorization",
+                `Bearer ${token}`,
+                authCookieOptions(60 * 60 * 1000)
+            );
+
+            const refreshToken = jwt.sign(
+                {
+                    id: existingUser._id,
+                    role: existingUser.role,
+                    email: existingUser.email,
+                },
+                process.env.JWT_SECRET,
+                {
+                    expiresIn: "4d",
+                }
+            );
+
+            res.cookie(
+                "refreshToken",
+                refreshToken,
+                authCookieOptions(4 * 24 * 60 * 60 * 1000)
+            );
+
+            await existingUser.save();
+
+            const user = existingUser.toObject();
+
+            delete user.password;
+            delete user.confirmPassword;
+            delete user.verificationToken;
+            delete user.verificationTokenExpiresAt;
+
+            await SendMail({
+                from: process.env.EMAIL_FROM,
+                to: existingUser.email,
+                subject: "Welcome to StudStore — Learn. Explore. Innovate!",
+                text: `Welcome to StudStore, ${existingUser.username}! We're excited to have you join our growing community of learners, innovators, and future engineers. Thank you for choosing StudStore. Empowering learning. Inspiring innovation.`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 24px; color: #1e293b; line-height: 1.7;">
+                        <h2 style="color: #2563eb; text-align: center;">
+                            Welcome to StudStore — Your Journey to Learning and Innovation Starts Here!
+                        </h2>
+
+                        <p>Hi ${existingUser.username},</p>
+
+                        <h1 style="text-align: center;">Welcome to StudStore!</h1>
+
+                        <p>
+                            We're excited to have you join our growing community of learners,
+                            innovators, and future engineers.
+                        </p>
+
+                        <p>
+                            StudStore was created to make learning more accessible, help
+                            students grow academically, and connect people with the knowledge
+                            and resources they need to succeed.
+                        </p>
+
+                        <p><strong>With StudStore, you can:</strong></p>
+
+                        <h3>Learn Smarter</h3>
+                        <p>Explore courses, lessons, and topics designed to support your academic journey.</p>
+
+                        <h3>Expand Your Knowledge</h3>
+                        <p>Discover learning materials, educational videos, and useful resources.</p>
+
+                        <h3>Explore Engineering Research</h3>
+                        <p>Discover research papers, academic publications, and ideas that inspire innovation.</p>
+
+                        <h3>Grow and Innovate</h3>
+                        <p>Build your knowledge, strengthen your skills, and take steps toward your future goals.</p>
+
+                        <p>
+                            We believe that every great innovation begins with curiosity,
+                            learning, and the courage to explore new ideas. Whether you're
+                            preparing for an examination, deepening your understanding of
+                            engineering, or discovering new research, StudStore is here to
+                            support your journey.
+                        </p>
+
+                        <div style="padding: 16px; background: #eff6ff; border-radius: 8px; text-align: center; margin: 24px 0;">
+                            <h2 style="color: #1d4ed8;">
+                                Your journey to knowledge, growth, and innovation starts here.
+                            </h2>
+                        </div>
+
+                        <p>
+                            Thank you for choosing StudStore. We're glad you're part of our
+                            community, and we look forward to being part of your academic journey.
+                        </p>
+
+                        <p>Log in to your account and start exploring!</p>
+
+                        <h2 style="text-align: center; color: #2563eb;">
+                            Learn. Explore. Innovate.
+                        </h2>
+
+                        <p>Warm regards,</p>
+                        <h2>The StudStore Team</h2>
+
+                        <p style="color: #64748b;">
+                            Empowering learning. Inspiring innovation.
+                        </p>
+
+                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+                        <p style="font-size: 12px; color: #64748b; text-align: center;">
+                            Thank you for choosing StudStore.
+                        </p>
+                    </div>
+                `,
+            });
+
+            return res.status(200).json({
+                success: true,
+                user,
+                message: "Logged in successfully.",
+            })
+        } 
+        
+        catch (error) {
+            console.error("VERIFICATION ERROR:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Something went wrong.",
+            });
+    }
+}
 
 exports.Login = async (req, res) => {
     try {
@@ -651,48 +886,57 @@ exports.ForgotPasswordEmail = async (req, res) => {
         const forgotPasswordCodeExpiresAt =
             Date.now() + 24 * 60 * 60 * 1000;
 
-        const sendingMail = await transport.sendMail({
+        await SendMail({
             from: process.env.NODE_CODE_SENDING_EMAIL_ADDRESS,
             to: existingUser.email,
-            subject: "Forgot Password Code",
-            html: "<h1>" + forgotPasswordCode + "</h1>",
+            subject: "StudStore Forgot Password Code",
+            text: `Your Forget Password Code is: ${forgotPasswordCode}. Use this code to reset your StudStore password.`,
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 24px;">
+                    <h2>StudStore Reset Password Code</h2>
+                    <p>This code expires in an hour from the time it was sent.</p>
+                    <div style="padding: 16px; background: #f1f5f9; font-size: 20px; font-weight: bold; word-break: break-all;">
+                        ${forgotPasswordCode}
+                    </div>
+                    <p>Thanks for choosing StudStore.</p>
+                </div>
+            `,
         });
 
-        if (sendingMail.accepted[0] === existingUser.email) {
-            const hashedValue = hmacProcess(
-                forgotPasswordCode,
-                process.env.HMAC_VERIFICATION_CODE_SECRET
-            );
+    
+        const hashedValue = hmacProcess(
+            forgotPasswordCode,
+            process.env.HMAC_VERIFICATION_CODE_SECRET
+        );
 
-            existingUser.forgotPasswordCode = hashedValue;
-            existingUser.forgotPasswordCodeExpiresAt =
-                forgotPasswordCodeExpiresAt;
+        existingUser.forgotPasswordCode = hashedValue;
+        existingUser.forgotPasswordCodeExpiresAt =
+            forgotPasswordCodeExpiresAt;
 
-            const verificationToken = jwt.sign(
-                {
-                    user_Id: existingUser._id,
-                    purpose: "forget-password-user",
-                },
-                process.env.JWT_SECRET,
-                {
-                    expiresIn: "1h",
-                }
-            );
+        const verificationToken = jwt.sign(
+            {
+                user_Id: existingUser._id,
+                purpose: "forget-password-user",
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "1h",
+            }
+        );
 
-            res.cookie(
-                "forget-password-user",
-                verificationToken,
-                authCookieOptions(60 * 60 * 1000)
-            );
+        res.cookie(
+            "forget-password-user",
+            verificationToken,
+            authCookieOptions(60 * 60 * 1000)
+        );
 
-            await existingUser.save();
+        await existingUser.save();
 
-            return res.status(200).json({
-                success: true,
-                message: "Check your email for the reset password code.",
-            });
-        }
-
+        return res.status(200).json({
+            success: true,
+            message: "Check your email for the reset password code.",
+        });
+    
         return res.status(500).json({
             success: false,
             message: "Unable to send the reset password code.",
@@ -800,9 +1044,11 @@ exports.VerifyForgotPasswordCode = async (req, res) => {
     }
 };
 
+
 exports.ResetPassword = async (req, res) => {
     try {
         const { password, confirmPassword } = req.body;
+
         const resetToken = req.cookies["reset-password"];
 
         if (!resetToken) {
@@ -833,6 +1079,13 @@ exports.ResetPassword = async (req, res) => {
             });
         }
 
+        if (typeof password !== "string" || typeof confirmPassword !== "string") {
+            return res.status(400).json({
+                success: false,
+                message: "Password and confirm password are required.",
+            });
+        }
+
         if (password !== confirmPassword) {
             return res.status(409).json({
                 success: false,
@@ -840,7 +1093,7 @@ exports.ResetPassword = async (req, res) => {
             });
         }
 
-        // Validate reset passwords before hashing.
+        // Validate password before hashing.
         const passwordError = getPasswordValidationError(password);
 
         if (passwordError) {
@@ -872,8 +1125,23 @@ exports.ResetPassword = async (req, res) => {
             success: true,
             message: "Password updated successfully.",
         });
+
     } catch (error) {
         console.error("RESET PASSWORD ERROR:", error);
+
+        if (error.name === "TokenExpiredError") {
+            return res.status(401).json({
+                success: false,
+                message: "Password reset session has expired. Please request a new code.",
+            });
+        }
+
+        if (error.name === "JsonWebTokenError") {
+            return res.status(403).json({
+                success: false,
+                message: "Invalid reset token.",
+            });
+        }
 
         return res.status(500).json({
             success: false,

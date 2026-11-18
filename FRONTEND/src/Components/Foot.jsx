@@ -1,5 +1,4 @@
 import backgroun from '../Image/FB3.jpg'
-import Logo from '../Image/FBLOGO.jpg'
 import { NavLink } from 'react-router-dom'
 
 const Foot = () => {
@@ -17,11 +16,6 @@ const Foot = () => {
 
         {/* Faculty */}
         <div>
-          <img
-            className="mb-4 h-20 w-20 rounded-full object-cover"
-            src={Logo}
-            alt="Faculty of Engineering Logo"
-          />
 
           <h2 className="pb-3 text-2xl font-bold">
             Faculty of Engineering
@@ -91,15 +85,15 @@ const Foot = () => {
             </h3>
 
              <NavLink to="/me" className="cursor-pointer transition hover:text-amber-500">
-              E-Learning
+              Exam Simulator
             </NavLink>
 
              <NavLink to="/me/learning-materials" className="cursor-pointer transition hover:text-amber-500">
-              Saved Materials
+              StudAI 5
             </NavLink>
 
              <NavLink to="/me" className="cursor-pointer transition hover:text-amber-500">
-              Academic Calender
+              Past Questions
             </NavLink>
           </div>
         </div>
@@ -116,11 +110,11 @@ const Foot = () => {
             </p>
 
             <p>
-              Email: engineering@Otuoke.com
+              Email: info@studstore.com.ng
             </p>
 
             <p>
-              Phone: +234 8068640901
+              Phone: +234 9131374798
             </p>
 
             <p>

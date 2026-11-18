@@ -260,8 +260,7 @@ const UserRegister = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.88 }}
                 className="flex w-full max-w-5xl overflow-hidden mt-4 md:mt-8 rounded-lg bg-white shadow-lg"
-            >
-                {/* Left information panel */}
+            >                {/* Left information panel */}
                 <div className="relative hidden md:block w-1/2 min-h-[700px] overflow-hidden">
                     <img
                         src={faculty}
@@ -282,6 +281,8 @@ const UserRegister = () => {
                             </div>
 
                             <div className="mb-8 mt-3">
+
+                                
                                 <h1 className="font-bold leading-6">
                                     FACULTY OF
                                     <br />

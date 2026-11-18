@@ -13,7 +13,7 @@ const VerifyEmail = () => {
     const location = useLocation();
     const email = location.state?.email;
     const navigate = useNavigate();
-    const { verifyEmailSent } = useAuthStore();
+    const { verifyEmailSent, ResendVerificationCode } = useAuthStore();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -41,6 +41,26 @@ const VerifyEmail = () => {
         }
         };
 
+
+    const handleResendVerificationCode = async (e) => {
+        try {
+            setLoading(false);
+
+            alert("Resend fucntion reached")
+            const response = await ResendVerificationCode;
+
+            if(response.success) {
+                alert("Verification Code Sent")
+                navigate('/me');
+
+            } else{
+                console.log("Verification Code Resend Failed, please check your internet connection")
+            }
+
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
     const handleKeyChange = (index, value) => {
 
@@ -151,6 +171,16 @@ return (
                         >
                             {loading ? "Verifying..." : "Verify"}
                         </button>
+                    </div>
+
+                    <div className="flex justify-evenly items-center mt-4 text-white">
+                        <div>
+                            <h4>Didn't recieve code?</h4>
+                        </div>
+
+                        <div onClick={handleResendVerificationCode}>
+                            <button className="hover:cursor-pointer text-blue-400">Resend Code</button>
+                        </div>
                     </div>
                 </form>
             </div>

@@ -1,14 +1,8 @@
-const ValidateLesson = require(
-    "../../middlewares/Admin/validateLesson"
-);
+const ValidateLesson = require( "../../middlewares/Admin/ValidateLesson");
 
-const Topic = require(
-    "../../modules/CourseModuels/TopicSchema"
-);
+const Topic = require( "../../modules/CourseModuels/TopicSchema");
 
-const Lesson = require(
-    "../../modules/CourseModuels/LessonSchema"
-);
+const Lesson = require( "../../modules/CourseModuels/LessonSchema");
 
 // Convert plain URLs into the object format required by Joi and Mongoose.
 // Accepts a newline-separated string, an array of URLs, or an array of objects.
@@ -157,6 +151,7 @@ exports.CreateLesson = async (req, res) => {
         });
     }
 };
+
 
 
 // GET ALL LESSONS

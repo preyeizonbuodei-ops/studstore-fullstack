@@ -207,6 +207,74 @@ export const useAuthStore = create((set) => ({
         }
     },
 
+    ResendVerificationCode: async () => {
+        set({
+            isLoading: false,
+            error: null
+        });
+
+        try {
+            const response = await API.patch(
+                '/resend-verification-code'
+            );
+
+            const data = response.data;
+            
+            set({
+                isLoading: false,
+                isCheckingAuth: false,
+                isAuthenticated: false,
+                error: null
+            })
+
+        } catch (error) {
+            set({
+                isLoading: false,
+                error: getErrorMessage(
+                    error, "Email Resent Failed"
+                )
+            })
+        }
+    },
+
+    VerifyResentEmailCode: async (email, verificationCode) => {
+        set({
+            isLoading: false,
+            error: null
+        });
+
+        try {
+            
+            const response = await API.patch(
+                "/verify-resent-verification-code", {
+                    email, verificationCode
+                }
+            );
+
+            const data = response.data;
+
+            set({
+                user: data.user || null,
+                isAuthenticated: true,
+                isLoading: false,
+                isCheckingAuth: false,
+                error: null
+            })
+
+            return data;
+
+        } catch (error) {
+            set({
+                isLoading: false,
+                error: getErrorMessage(
+                    error, "Email verification failed!"
+                ),
+            });
+
+            throw error;
+        }
+    },
+
     // Log out the current student session.
     Logout: async () => {
         set({
