@@ -14,6 +14,10 @@ export const AdminRegister = create((set) => ({
     isCheckingAuth: true,
     error: null,
 
+    pastQuestionPapers: [],
+    selectedPastQuestionPaper: null,
+    isPastQuestionsLoading: false,
+    pastQuestionsError: null,
     // =========================
     // ADMIN REGISTER
     // =========================
@@ -226,5 +230,214 @@ login: async (email, password, adminKey) => {
 
             throw error;
         }
+    },
+
+    // =====================================
+// PAST QUESTIONS LIBRARY - ADMIN
+// =====================================
+
+// CREATE PAST QUESTION PDF
+CreatePastQuestionPaper: async (paperData) => {
+    set({
+        isPastQuestionsLoading: true,
+        pastQuestionsError: null,
+    });
+
+    try {
+        const response = await axios.post(
+            `${API_URL}/past-questions`,
+            paperData
+        );
+
+        set((state) => ({
+            pastQuestionPapers: [
+                response.data.paper,
+                ...state.pastQuestionPapers,
+            ],
+            isPastQuestionsLoading: false,
+        }));
+
+        return response.data;
+    } catch (error) {
+        set({
+            isPastQuestionsLoading: false,
+            pastQuestionsError:
+                error.response?.data?.message ||
+                "Failed to create past-question PDF",
+        });
+
+        throw error;
     }
+},
+
+// GET ALL PAST QUESTION PDFs
+GetPastQuestionPapers: async () => {
+    set({
+        isPastQuestionsLoading: true,
+        pastQuestionsError: null,
+    });
+
+    try {
+        const response = await axios.get(
+            `${API_URL}/past-questions`
+        );
+
+        set({
+            pastQuestionPapers: response.data.papers || [],
+            isPastQuestionsLoading: false,
+        });
+
+        return response.data;
+    } catch (error) {
+        set({
+            isPastQuestionsLoading: false,
+            pastQuestionsError:
+                error.response?.data?.message ||
+                "Failed to fetch past-question PDFs",
+        });
+
+        throw error;
+    }
+},
+
+// GET ONE PAST QUESTION PDF
+GetPastQuestionPaperById: async (paperId) => {
+    set({
+        isPastQuestionsLoading: true,
+        pastQuestionsError: null,
+    });
+
+    try {
+        const response = await axios.get(
+            `${API_URL}/past-questions/${paperId}`
+        );
+
+        set({
+            selectedPastQuestionPaper: response.data.paper,
+            isPastQuestionsLoading: false,
+        });
+
+        return response.data;
+    } catch (error) {
+        set({
+            isPastQuestionsLoading: false,
+            pastQuestionsError:
+                error.response?.data?.message ||
+                "Failed to fetch past-question PDF",
+        });
+
+        throw error;
+    }
+},
+
+// UPDATE PAST QUESTION PDF DETAILS
+UpdatePastQuestionPaper: async (paperId, paperData) => {
+    set({
+        isPastQuestionsLoading: true,
+        pastQuestionsError: null,
+    });
+
+    try {
+        const response = await axios.patch(
+            `${API_URL}/past-questions/${paperId}`,
+            paperData
+        );
+
+        set((state) => ({
+            pastQuestionPapers: state.pastQuestionPapers.map(
+                (paper) =>
+                    paper._id === paperId
+                        ? response.data.paper
+                        : paper
+            ),
+            selectedPastQuestionPaper: response.data.paper,
+            isPastQuestionsLoading: false,
+        }));
+
+        return response.data;
+    } catch (error) {
+        set({
+            isPastQuestionsLoading: false,
+            pastQuestionsError:
+                error.response?.data?.message ||
+                "Failed to update past-question PDF",
+        });
+
+        throw error;
+    }
+},
+
+// PUBLISH, UNPUBLISH OR ARCHIVE
+UpdatePastQuestionPaperStatus: async (paperId, status) => {
+    set({
+        isPastQuestionsLoading: true,
+        pastQuestionsError: null,
+    });
+
+    try {
+        const response = await axios.patch(
+            `${API_URL}/past-questions/${paperId}/status`,
+            { status }
+        );
+
+        set((state) => ({
+            pastQuestionPapers: state.pastQuestionPapers.map(
+                (paper) =>
+                    paper._id === paperId
+                        ? response.data.paper
+                        : paper
+            ),
+            selectedPastQuestionPaper: response.data.paper,
+            isPastQuestionsLoading: false,
+        }));
+
+        return response.data;
+    } catch (error) {
+        set({
+            isPastQuestionsLoading: false,
+            pastQuestionsError:
+                error.response?.data?.message ||
+                "Failed to update past-question PDF status",
+        });
+
+        throw error;
+    }
+},
+
+// DELETE PAST QUESTION PDF
+DeletePastQuestionPaper: async (paperId) => {
+    set({
+        isPastQuestionsLoading: true,
+        pastQuestionsError: null,
+    });
+
+    try {
+        const response = await axios.delete(
+            `${API_URL}/past-questions/${paperId}`
+        );
+
+        set((state) => ({
+            pastQuestionPapers: state.pastQuestionPapers.filter(
+                (paper) => paper._id !== paperId
+            ),
+            selectedPastQuestionPaper:
+                state.selectedPastQuestionPaper?._id === paperId
+                    ? null
+                    : state.selectedPastQuestionPaper,
+            isPastQuestionsLoading: false,
+        }));
+
+        return response.data;
+        } catch (error) {
+            set({
+                isPastQuestionsLoading: false,
+                pastQuestionsError:
+                    error.response?.data?.message ||
+                    "Failed to delete past-question PDF",
+            });
+
+            throw error;
+        }
+    },
+
 }));

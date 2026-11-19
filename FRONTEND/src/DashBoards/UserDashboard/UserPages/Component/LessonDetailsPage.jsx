@@ -129,7 +129,11 @@ function ResourceCard({
 }) {
     const title = getResourceTitle(
         resource,
-        type === "video" ? "Video resource" : "Study material"
+        type === "video"
+            ? "Video resource"
+            : type === "material"
+              ? "Study material"
+              : "Additional resource"
     );
 
     const url = getResourceUrl(resource);
@@ -167,8 +171,10 @@ function ResourceCard({
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
                         {type === "video" ? (
                             <Video size={21} />
-                        ) : (
+                        ) : type === "material" ? (
                             <FileText size={21} />
+                        ) : (
+                            <ExternalLink size={21} />
                         )}
                     </div>
 
@@ -176,7 +182,9 @@ function ResourceCard({
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                             {type === "video"
                                 ? `Video ${index + 1}`
-                                : `Material ${index + 1}`}
+                                : type === "material"
+                                  ? `Material ${index + 1}`
+                                  : `Resource ${index + 1}`}
                         </p>
 
                         <h3 className="mt-1 break-words font-semibold text-slate-900">
@@ -201,7 +209,9 @@ function ResourceCard({
 
                             {type === "video"
                                 ? "Watch Video"
-                                : "Open Material"}
+                                : type === "material"
+                                  ? "Open Material"
+                                  : "Open Resource"}
                         </a>
                     )}
 
@@ -469,8 +479,6 @@ export default function LessonDetails() {
         setSaveNotice("");
 
         try {
-            // The current saved-material API uses topicId.
-            // Keep that contract until its backend is changed.
             const result = await saveMaterial({
                 topicId: parentTopicId,
                 title,
@@ -504,7 +512,7 @@ export default function LessonDetails() {
         }
     };
 
-    // These now come from the lesson document, not the topic document.
+    // Retrieve each category directly from the Lesson document.
     const content = lesson?.content || "";
 
     const examples =
@@ -514,22 +522,18 @@ export default function LessonDetails() {
         "";
 
     const videos = useMemo(() => {
-        const value = lesson?.videos || lesson?.videoResources || [];
+        const value = lesson?.videos || [];
         return Array.isArray(value) ? value : [value];
     }, [lesson]);
 
     const materials = useMemo(() => {
-        const normalize = (value) => {
-            if (!value) return [];
-            return Array.isArray(value) ? value : [value];
-        };
+        const value = lesson?.materials || [];
+        return Array.isArray(value) ? value : [value];
+    }, [lesson]);
 
-        return [
-            ...normalize(lesson?.materials),
-            ...normalize(lesson?.studyMaterials),
-            ...normalize(lesson?.externalMaterials),
-            ...normalize(lesson?.resources),
-        ];
+    const resources = useMemo(() => {
+        const value = lesson?.resources || [];
+        return Array.isArray(value) ? value : [value];
     }, [lesson]);
 
     const tabs = [
@@ -537,6 +541,11 @@ export default function LessonDetails() {
         { id: "examples", label: "Worked Examples", icon: BookText },
         { id: "videos", label: "Videos", icon: Video },
         { id: "materials", label: "Study Materials", icon: FileText },
+        {
+            id: "resources",
+            label: "Additional Resources",
+            icon: ExternalLink,
+        },
     ];
 
     const exampleCount = Array.isArray(examples)
@@ -550,6 +559,7 @@ export default function LessonDetails() {
         examples: exampleCount,
         videos: videos.filter(Boolean).length,
         materials: materials.filter(Boolean).length,
+        resources: resources.filter(Boolean).length,
     };
 
     if (loading) {
@@ -826,7 +836,7 @@ export default function LessonDetails() {
                             </section>
                         )}
 
-                        {/* Materials */}
+                        {/* Study Materials */}
                         {activeTab === "materials" && (
                             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
                                 <div className="mb-6 flex items-center gap-3">
@@ -906,6 +916,43 @@ export default function LessonDetails() {
                                 )}
                             </section>
                         )}
+
+                        {/* Additional Resources */}
+                        {activeTab === "resources" && (
+                            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                                <div className="mb-6 flex items-center gap-3">
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-700">
+                                        <ExternalLink size={22} />
+                                    </div>
+
+                                    <div>
+                                        <h2 className="text-xl font-bold text-slate-900">
+                                            Additional Resources
+                                        </h2>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            Explore additional learning resources recommended for this lesson.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {resources.length > 0 ? (
+                                    <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                                        {resources.map((resource, index) => (
+                                            <ResourceCard
+                                                key={`${getResourceUrl(resource)}-${index}`}
+                                                resource={resource}
+                                                index={index}
+                                                type="resource"
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+                                        No additional resources have been added to this lesson yet.
+                                    </p>
+                                )}
+                            </section>
+                        )}
                     </main>
 
                     {/* Sidebar */}
@@ -958,6 +1005,16 @@ export default function LessonDetails() {
                                     </span>
                                     <span className="text-sm font-semibold text-slate-700">
                                         {materials.length}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="flex items-center gap-2 text-sm text-slate-600">
+                                        <ExternalLink size={17} className="text-purple-600" />
+                                        Additional Resources
+                                    </span>
+                                    <span className="text-sm font-semibold text-slate-700">
+                                        {resources.length}
                                     </span>
                                 </div>
                             </div>

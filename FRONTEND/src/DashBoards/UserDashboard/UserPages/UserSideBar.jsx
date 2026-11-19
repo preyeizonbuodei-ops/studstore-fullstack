@@ -1,18 +1,19 @@
 import { useAuthStore } from "../../../Store/AuthStore";
 import {
-    File,
-    GraduationCap,
-    Home,
-    LogOutIcon,
-    Settings,
-    User,
-    Book,
-    BookOpen,
-    Menu,
-    X,
-    Boxes,
-    ClipboardList,
-    MessagesSquare,
+  File,
+  FileText,
+  GraduationCap,
+  Home,
+  LogOutIcon,
+  Settings,
+  User,
+  Book,
+  BookOpen,
+  Menu,
+  X,
+  Boxes,
+  ClipboardList,
+  MessagesSquare,
 } from "lucide-react";
 import {
     NavLink,
@@ -33,6 +34,10 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
     const handleNavigation = () => {
         setIsOpen(false);
     };
+
+    const isPastQuestionsActive =
+        location.pathname === "/me/past-questions" ||
+        location.pathname.startsWith("/me/past-questions/");
 
     const isQuestionBankActive =
     location.pathname === "/me/question-bank" ||
@@ -179,7 +184,23 @@ const UserSideBar = ({ isOpen, setIsOpen }) => {
                         }
                     >
                         <BookOpen size={20} />
-                        <span>Past Questions</span>
+                        <span>Past Questions Exams</span>
+                    </NavLink>
+
+                    {/* Independent Past Questions Library */}
+                    <NavLink
+                    to="/me/past-questions"
+                    onClick={handleNavigation}
+                    className={() =>
+                        `flex items-center gap-3 rounded px-3 py-3 transition duration-300 ${
+                        isPastQuestionsActive
+                            ? "bg-white text-black"
+                            : "hover:bg-white hover:text-black"
+                        }`
+                    }
+                    >
+                    <FileText size={20} />
+                    <span>Past Questions Library</span>
                     </NavLink>
 
                     {/* Student Voices */}

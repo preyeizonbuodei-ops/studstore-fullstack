@@ -44,6 +44,8 @@ import UploadPastQuestionPapar from "./DashBoards/AdminDashboard/AdminPages/Ques
 import UserData from "./DashBoards/AdminDashboard/AdminPages/UsersData";
 import ManagePastQuestionPaper from "./DashBoards/AdminDashboard/AdminPages/QuestionBank/ManagePastQuestionPaper";
 
+// NEW INDEPENDENT PAST QUESTIONS ADMIN PAGE
+import AdminPastQuestions from "./DashBoards/AdminDashboard/AdminPages/AdminPastQuestions";
 
 // ADMIN FORMS
 import CreateCourse from "./DashBoards/AdminDashboard/AdminPageForms/CreateCourseForm";
@@ -56,8 +58,13 @@ import AdminEditLesson from "./DashBoards/AdminDashboard/AdminPageForms/AdminEdi
 import AdminCreateMajorArea from "./DashBoards/AdminDashboard/AdminPageForms/CreateMajorAreaForm";
 import CreateMajorAreaTopic from "./DashBoards/AdminDashboard/AdminPageForms/MajorTopicForm";
 import CreateResearchPaper from "./DashBoards/AdminDashboard/AdminPageForms/CreateResearchPaper";
+
+// EXISTING QUESTION BANK STUDENT PAGES
 import StudentQuestionBank from "./DashBoards/UserDashboard/UserPages/QuestionBank/StudentQuestionBank";
 import StudentPastQuestionPaper from "./DashBoards/UserDashboard/UserPages/QuestionBank/StudentPastQuestionPaper";
+
+// NEW INDEPENDENT PAST QUESTIONS STUDENT PAGE
+import StudentPastQuestionsLibrary from "./DashBoards/UserDashboard/UserPages/StudentPastQuestionsLibrary";
 
 // ADMIN AUTH
 import AdminLogin from "./Pages/AdminRegisters/AdminLogin";
@@ -321,13 +328,13 @@ function App() {
                             element={<AdminExamQuestions />}
                         />
 
-                        {/* QUESTION BANK */}
+                        {/* EXISTING QUESTION BANK */}
                         <Route
                             path="question-bank"
                             element={<QuestionBank />}
                         />
 
-                        {/* UPLOAD PAST QUESTION PAPER */}
+                        {/* EXISTING QUESTION PAPER UPLOAD */}
                         <Route
                             path="question-bank/upload"
                             element={<UploadPastQuestionPapar />}
@@ -336,6 +343,12 @@ function App() {
                         <Route
                             path="question-bank/papers/:paperId"
                             element={<ManagePastQuestionPaper />}
+                        />
+
+                        {/* NEW INDEPENDENT PAST QUESTIONS LIBRARY */}
+                        <Route
+                            path="past-questions"
+                            element={<AdminPastQuestions />}
                         />
                     </Route>
 
@@ -352,7 +365,7 @@ function App() {
                     />
 
                     <Route
-                        path="/admin/edit-lesson"
+                        path="/admin/edit-lesson/:lessonId?"
                         element={<AdminEditLesson />}
                     />
 
@@ -437,7 +450,7 @@ function App() {
                             element={<Courses />}
                         />
 
-                        {/* Student exam simulator */}
+                        {/* STUDENT EXAM SIMULATOR */}
                         <Route
                             path="/me/exams"
                             element={<StudentExamDashboard />}
@@ -463,6 +476,7 @@ function App() {
                             element={<StudentExamResult />}
                         />
 
+                        {/* EXISTING QUESTION BANK */}
                         <Route
                             path="/me/question-bank"
                             element={<StudentQuestionBank />}
@@ -471,6 +485,12 @@ function App() {
                         <Route
                             path="/me/question-bank/papers/:paperId"
                             element={<StudentPastQuestionPaper />}
+                        />
+
+                        {/* NEW INDEPENDENT PAST QUESTIONS LIBRARY */}
+                        <Route
+                            path="/me/past-questions"
+                            element={<StudentPastQuestionsLibrary />}
                         />
 
                         {/* Course → Topics */}
@@ -515,11 +535,6 @@ function App() {
                         <Route
                             path="/me/student-voices"
                             element={<StudentVoices />}
-                        />
-
-                        <Route
-                            path="/me/question-bank/papers/:paperId"
-                            element={<StudentPastQuestionPaper />}
                         />
 
                         {/* Department learning */}

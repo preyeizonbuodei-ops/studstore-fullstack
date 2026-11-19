@@ -2,6 +2,7 @@
 import { useState } from "react";
 import {
     File,
+    FileText,
     GraduationCap,
     Home,
     LogOutIcon,
@@ -120,6 +121,16 @@ const AdminSidebar = () => {
                     >
                         <BookOpen size={20} />
                         <span>Question Bank</span>
+                    </NavLink>
+
+                    {/* Past Questions Management */}
+                    <NavLink
+                        to="/admin-dashboard/past-questions"
+                        onClick={closeSidebar}
+                        className={navLinkClass}
+                    >
+                        <FileText size={20} />
+                        <span>Past Questions</span>
                     </NavLink>
 
                     <NavLink

@@ -1,3 +1,4 @@
+
 import axios from "axios";
 import { create } from "zustand";
 
@@ -111,6 +112,150 @@ const useLessonStore = create(() => ({
             throw error;
         }
     },
+
+    // ==========================================
+    // ADD VIDEOS, MATERIALS AND RESOURCES
+    // ==========================================
+
+    // Add a video to an existing lesson
+    addVideoToLesson: async (lessonId, videoData) => {
+        try {
+            if (!lessonId) {
+                throw new Error("Lesson ID is required.");
+            }
+
+            const response = await axios.post(
+                `${API_URL}/lesson/${encodeURIComponent(lessonId)}/videos`,
+                videoData
+            );
+
+            return response.data;
+        } catch (error) {
+            console.error(
+                "ADD VIDEO TO LESSON ERROR:",
+                error.response?.data || error
+            );
+
+            throw error;
+        }
+    },
+
+    // Add a material to an existing lesson
+    addMaterialToLesson: async (lessonId, materialData) => {
+        try {
+            if (!lessonId) {
+                throw new Error("Lesson ID is required.");
+            }
+
+            const response = await axios.post(
+                `${API_URL}/lesson/${encodeURIComponent(lessonId)}/materials`,
+                materialData
+            );
+
+            return response.data;
+        } catch (error) {
+            console.error(
+                "ADD MATERIAL TO LESSON ERROR:",
+                error.response?.data || error
+            );
+
+            throw error;
+        }
+    },
+
+    // Add a resource to an existing lesson
+    addResourceToLesson: async (lessonId, resourceData) => {
+        try {
+            if (!lessonId) {
+                throw new Error("Lesson ID is required.");
+            }
+
+            const response = await axios.post(
+                `${API_URL}/lesson/${encodeURIComponent(lessonId)}/resources`,
+                resourceData
+            );
+
+            return response.data;
+        } catch (error) {
+            console.error(
+                "ADD RESOURCE TO LESSON ERROR:",
+                error.response?.data || error
+            );
+
+            throw error;
+        }
+    },
+
+    // ==========================================
+    // GET VIDEOS, MATERIALS AND RESOURCES
+    // ==========================================
+
+    // Get all videos belonging to a lesson
+    getLessonVideos: async (lessonId) => {
+        try {
+            if (!lessonId) {
+                throw new Error("Lesson ID is required.");
+            }
+
+            const response = await axios.get(
+                `${API_URL}/lesson/${encodeURIComponent(lessonId)}/videos`
+            );
+
+            return response.data;
+        } catch (error) {
+            console.error(
+                "GET LESSON VIDEOS ERROR:",
+                error.response?.data || error
+            );
+
+            throw error;
+        }
+    },
+
+    // Get all materials belonging to a lesson
+    getLessonMaterials: async (lessonId) => {
+        try {
+            if (!lessonId) {
+                throw new Error("Lesson ID is required.");
+            }
+
+            const response = await axios.get(
+                `${API_URL}/lesson/${encodeURIComponent(lessonId)}/materials`
+            );
+
+            return response.data;
+        } catch (error) {
+            console.error(
+                "GET LESSON MATERIALS ERROR:",
+                error.response?.data || error
+            );
+
+            throw error;
+        }
+    },
+
+    
+    // Get all resources belonging to a lesson
+    getLessonResources: async (lessonId) => {
+        try {
+            if (!lessonId) {
+                throw new Error("Lesson ID is required.");
+            }
+
+            const response = await axios.get(
+                `${API_URL}/lesson/${encodeURIComponent(lessonId)}/resources`
+            );
+
+            return response.data;
+        } catch (error) {
+            console.error(
+                "GET LESSON RESOURCES ERROR:",
+                error.response?.data || error
+            );
+
+            throw error;
+        }
+    }
 }));
 
 export default useLessonStore;

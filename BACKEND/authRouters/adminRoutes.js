@@ -19,7 +19,23 @@ const {
     GetLessonsByTopic,
     UpdateLesson,
     DeleteLesson,
+    AddVideoToLesson,
+    AddMaterialToLesson,
+    AddResourceToLesson,
+    GetLessonVideos,
+    GetLessonMaterials,
+    GetLessonResources,
 } = require("../authControllers/Admin/LessonController");
+
+// Independent Past Questions PDF Library
+const {
+    CreateQuestionPaper,
+    GetQuestionPapers,
+    GetQuestionPaperById,
+    UpdateQuestionPaper,
+    UpdateQuestionPaperStatus,
+    DeleteQuestionPaper,
+} = require("../modules/CourseModuels/AdminPastQuestionLibraryController");
 
 const {
     CreateCourse,
@@ -173,6 +189,51 @@ adminRouter.delete(
     DeletePastQuestion
 );
 
+// ==========================================
+// INDEPENDENT PAST QUESTIONS PDF LIBRARY
+// ==========================================
+
+adminRouter.post(
+    "/past-questions",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    CreateQuestionPaper
+);
+
+adminRouter.get(
+    "/past-questions",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    GetQuestionPapers
+);
+
+adminRouter.get(
+    "/past-questions/:paperId",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    GetQuestionPaperById
+);
+
+adminRouter.patch(
+    "/past-questions/:paperId",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    UpdateQuestionPaper
+);
+
+adminRouter.patch(
+    "/past-questions/:paperId/status",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    UpdateQuestionPaperStatus
+);
+
+adminRouter.delete(
+    "/past-questions/:paperId",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    DeleteQuestionPaper
+);
 
 // ==========================================
 // QUESTION BANK - PAST QUESTION PAPERS
@@ -461,6 +522,57 @@ adminRouter.delete(
     DeleteLesson
 );
 
+// ==========================================
+// LESSON RESOURCE ROUTES
+// ==========================================
+
+// Add a video to an existing lesson
+adminRouter.post(
+    "/lesson/:lessonId/videos",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    AddVideoToLesson
+);
+
+// Add a material to an existing lesson
+adminRouter.post(
+    "/lesson/:lessonId/materials",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    AddMaterialToLesson
+);
+
+// Add a resource to an existing lesson
+adminRouter.post(
+    "/lesson/:lessonId/resources",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    AddResourceToLesson
+);
+
+// Get videos belonging to a lesson
+adminRouter.get(
+    "/lesson/:lessonId/videos",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    GetLessonVideos
+);
+
+// Get materials belonging to a lesson
+adminRouter.get(
+    "/lesson/:lessonId/materials",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    GetLessonMaterials
+);
+
+// Get resources belonging to a lesson
+adminRouter.get(
+    "/lesson/:lessonId/resources",
+    ValidateAdminToken,
+    authorizedAdminRoles("Admin"),
+    GetLessonResources
+);
 
 // ==========================================
 // TOPIC ROUTES

@@ -1,8 +1,7 @@
-const ValidateLesson = require( "../../middlewares/Admin/ValidateLesson");
-
-const Topic = require( "../../modules/CourseModuels/TopicSchema");
-
-const Lesson = require( "../../modules/CourseModuels/LessonSchema");
+const mongoose = require("mongoose");
+const ValidateLesson = require("../../middlewares/Admin/ValidateLesson");
+const Topic = require("../../modules/CourseModuels/TopicSchema");
+const Lesson = require("../../modules/CourseModuels/LessonSchema");
 
 // Convert plain URLs into the object format required by Joi and Mongoose.
 // Accepts a newline-separated string, an array of URLs, or an array of objects.
@@ -128,7 +127,7 @@ exports.CreateLesson = async (req, res) => {
         // Map request fields to the existing Mongoose schema.
         const lesson = await Lesson.create({
             TopicId: value.topicId,
-            LessonNumber: value.lessonNumber,
+            LessonNumber: value.lessonNumber, 
             title: value.title,
             content: value.content,
             examples: value.examples ?? "",
@@ -333,6 +332,297 @@ exports.UpdateLesson = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Server error while updating lesson",
+        });
+    }
+};
+
+// ADD VIDEO TO EXISTING LESSON
+exports.AddVideoToLesson = async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+        const { title, url } = req.body;
+
+        if (!mongoose.isValidObjectId(lessonId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid lesson ID"
+            });
+        }
+
+        if (
+            typeof title !== "string" ||
+            typeof url !== "string" ||
+            !title.trim() ||
+            !url.trim()
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Video title and URL are required and must be valid strings"
+            });
+        }
+
+        const lesson = await Lesson.findByIdAndUpdate(
+            lessonId,
+            {
+                $push: {
+                    videos: {
+                        title: title.trim(),
+                        url: url.trim()
+                    }
+                }
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!lesson) {
+            return res.status(404).json({
+                success: false,
+                message: "Lesson not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Video added successfully",
+            videos: lesson.videos
+        });
+
+    } catch (error) {
+        console.error("ADD VIDEO ERROR:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to add video"
+        });
+    }
+};
+
+
+// ADD MATERIAL TO EXISTING LESSON
+exports.AddMaterialToLesson = async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+        const { title, url } = req.body;
+
+        if (!mongoose.isValidObjectId(lessonId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid lesson ID"
+            });
+        }
+
+        if (!title?.trim() || !url?.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Material title and URL are required"
+            });
+        }
+
+        const lesson = await Lesson.findByIdAndUpdate(
+            lessonId,
+            {
+                $push: {
+                    materials: {
+                        title: title.trim(),
+                        url: url.trim()
+                    }
+                }
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!lesson) {
+            return res.status(404).json({
+                success: false,
+                message: "Lesson not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Material added successfully",
+            materials: lesson.materials
+        });
+
+    } catch (error) {
+        console.error("ADD MATERIAL ERROR:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to add material"
+        });
+    }
+};
+
+
+// ADD RESOURCE TO EXISTING LESSON
+exports.AddResourceToLesson = async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+        const { title, url } = req.body;
+
+        if (!mongoose.isValidObjectId(lessonId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid lesson ID"
+            });
+        }
+
+        if (
+            typeof title !== "string" ||
+            typeof url !== "string" ||
+            !title.trim() ||
+            !url.trim()
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Resource title and URL are required and must be valid strings"
+            });
+   }
+
+        const lesson = await Lesson.findByIdAndUpdate(
+            lessonId,
+            {
+                $push: {
+                    resources: {
+                        title: title.trim(),
+                        url: url.trim()
+                    }
+                }
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!lesson) {
+            return res.status(404).json({
+                success: false,
+                message: "Lesson not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Resource added successfully",
+            resources: lesson.resources
+        });
+
+    } catch (error) {
+        console.error("ADD RESOURCE ERROR:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to add resource"
+        });
+    }
+};
+
+
+// GET LESSON VIDEOS
+exports.GetLessonVideos = async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+
+        if (!mongoose.isValidObjectId(lessonId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid lesson ID"
+            });
+        }
+
+        const lesson = await Lesson.findById(lessonId).select("videos");
+
+        if (!lesson) {
+            return res.status(404).json({
+                success: false,
+                message: "Lesson not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            videos: lesson.videos
+        });
+
+    } catch (error) {
+        console.error("GET VIDEOS ERROR:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to retrieve videos"
+        });
+    }
+};
+
+
+// GET LESSON MATERIALS
+exports.GetLessonMaterials = async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+
+        if (!mongoose.isValidObjectId(lessonId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid lesson ID"
+            });
+        }
+
+        const lesson = await Lesson.findById(lessonId).select("materials");
+
+        if (!lesson) {
+            return res.status(404).json({
+                success: false,
+                message: "Lesson not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            materials: lesson.materials
+        });
+
+    } catch (error) {
+        console.error("GET MATERIALS ERROR:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to retrieve materials"
+        });
+    }
+};
+
+
+// GET LESSON RESOURCES
+exports.GetLessonResources = async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+
+        if (!mongoose.isValidObjectId(lessonId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid lesson ID"
+            });
+        }
+
+        const lesson = await Lesson.findById(lessonId).select("resources");
+
+        if (!lesson) {
+            return res.status(404).json({
+                success: false,
+                message: "Lesson not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            resources: lesson.resources
+        });
+
+    } catch (error) {
+        console.error("GET RESOURCES ERROR:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to retrieve resources"
         });
     }
 };

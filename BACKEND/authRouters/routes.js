@@ -24,6 +24,11 @@ const { askQuestion, getConversations, getConversation } = require("../authContr
 const { GetPublishedExams, StartExamAttempt, GetAttemptQuestions, SaveAttemptAnswer, SubmitExamAttempt, GetExamHistory, GetExamResult} = require("../authControllers/ExamSimulator/StudentExamController");
 const { GetStudentPastQuestionPapers, GetStudentPastQuestions } = require("../authControllers/QuestionBank/StudentQuestionBankController");
 
+const {
+    getStudentPastQuestionPapers,
+    getStudentPastQuestionPaperById,
+} = require("../modules/CourseModuels/StudentPastQuestionLibraryController");
+
 const router = express.Router();
 
 
@@ -107,4 +112,21 @@ router.delete( "/delete-comment-reply/:id/:replyId", ValidateToken, authorizedUs
 router.get("/get-news", ConnectNews);
 router.post("/send-email", ValidateToken, authorizedUserRoles("Student"), ContactFormController);
 
+// ==========================================
+// INDEPENDENT PAST QUESTIONS PDF LIBRARY
+// ==========================================
+
+router.get(
+    "/past-questions",
+    ValidateToken,
+    authorizedUserRoles("Student"),
+    getStudentPastQuestionPapers
+);
+
+router.get(
+    "/past-questions/:paperId",
+    ValidateToken,
+    authorizedUserRoles("Student"),
+    getStudentPastQuestionPaperById
+);
 module.exports = router;

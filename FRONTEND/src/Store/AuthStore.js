@@ -26,6 +26,12 @@ export const useAuthStore = create((set) => ({
     isLoading: false,
     isCheckingAuth: true,
 
+    // Past Questions Library
+    pastQuestionPapers: [],
+    selectedPastQuestionPaper: null,
+    isPastQuestionsLoading: false,
+    pastQuestionsError: null,
+
     // Register a student.
     signup: async (
         email,
@@ -440,4 +446,70 @@ export const useAuthStore = create((set) => ({
             throw error;
         }
     },
+
+    // =====================================
+// STUDENT PAST QUESTIONS LIBRARY
+// =====================================
+
+// GET ALL PUBLISHED PAST QUESTION PDFs
+GetStudentPastQuestionPapers: async () => {
+    set({
+        isPastQuestionsLoading: true,
+        pastQuestionsError: null,
+    });
+
+    try {
+        const response = await API.get("/past-questions");
+
+        set({
+            pastQuestionPapers: response.data.papers || [],
+            isPastQuestionsLoading: false,
+            pastQuestionsError: null,
+        });
+
+        return response.data;
+    } catch (error) {
+        set({
+            isPastQuestionsLoading: false,
+            pastQuestionsError: getErrorMessage(
+                error,
+                "Failed to load past questions."
+            ),
+        });
+
+        throw error;
+    }
+},
+
+// GET ONE PUBLISHED PAST QUESTION PDF
+GetStudentPastQuestionPaperById: async (paperId) => {
+    set({
+        isPastQuestionsLoading: true,
+        pastQuestionsError: null,
+    });
+
+    try {
+        const response = await API.get(
+            `/past-questions/${paperId}`
+        );
+
+        set({
+            selectedPastQuestionPaper: response.data.paper,
+            isPastQuestionsLoading: false,
+            pastQuestionsError: null,
+        });
+
+        return response.data;
+    } catch (error) {
+        set({
+            isPastQuestionsLoading: false,
+            pastQuestionsError: getErrorMessage(
+                error,
+                "Failed to load this past-question paper."
+            ),
+        });
+
+        throw error;
+    }
+},
 }));
